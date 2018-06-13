@@ -1,53 +1,37 @@
 #pragma once
-#include "DxLib.h"
 #include <vector>       // ヘッダファイルインクルード
+#include <string>
 using namespace std;         //  名前空間指定
 
 class Node {
 private:
-	int id;
-	int range;
-	char* text;
-	int linkID;
+	int id, start, end;
+	string type;
+	string text;
+	int defIndex;
 public:
-	Node(int _id, int _range, char* _text, int _linkID) {
+	Node(int _id, int _start, int _end, string _type, string _text) {
 		id = _id;
-		range = _range;
+		start = _start;
+		end = _end;
+		type = _type;
 		text = _text;
-		linkID = _linkID;
+		defIndex = 0;
 	}
 
-	int DrawNode() {
-		printfDx("<%d,%d,%d> ", id, range, linkID);
-		printfDx(text);
-		printfDx("\n");
-		return 1;
-	}
-};
-
-class Map {
-private:
-	vector<Node> map;
-public:
-	Map() {
-		
+	void SetText(string _text) {
+		text = _text;
 	}
 
-	void init() {
-		if (map.size() > 0) {
-			for (int i = 0; i < map.size(); ++i) {
-				map.pop_back();
-			}
-		}
-	}
-	void Add(Node node) {
-		map.push_back(node);
+	void SetDefIndex(int _defIndex) {
+		defIndex = _defIndex;
 	}
 
-	void Draw() {
-		for (int i = 0; i < map.size(); ++i) {
-			printfDx("%d -> ", i);
-			map[i].DrawNode();
-		}
+	string DrawNode() {
+		string str = "(" + std::to_string(id) + "," + to_string(start) + "-" + to_string(end) + ")";
+		str += "def(" + to_string(defIndex) + ")";
+		str += "<" + type + ">";
+		str += text + "\n";
+		return str;
 	}
 };

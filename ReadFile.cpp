@@ -19,7 +19,7 @@ public:
 			return false;
 		}
 
-		int fileLength = FileRead_size(filepath) * 2;
+		int fileLength = (int)(FileRead_size(filepath) * 2);
 
 		char* text = (char*)malloc(fileLength);
 		*text = '\0';

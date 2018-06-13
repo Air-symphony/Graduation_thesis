@@ -23,6 +23,7 @@ INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
 HWND mainHwnd, Dxhwnd;
 HWND texthwnd;
+int index = 0;
 
 int DXInit(int x, int y) {
 	SetOutApplicationLogValidFlag(FALSE);//Log.txtÇÃèoóÕ
@@ -78,7 +79,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         return FALSE;
     }
 
-	DXInit(700, 700);
+	DXInit(700, 750);
 
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_PROJECT4A));
 
@@ -90,7 +91,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	readfile.SetFilePath(filepath);
 	readfile.PrintFile(texthwnd);
 
-	clsDx();
 	PrintAST(filepath);
 	ScreenFlip();
 
@@ -98,6 +98,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     while (GetMessage(&msg, nullptr, 0, 0) && ProcessMessage() == 0)
     {
 		clsDx();
+		ClearDrawScreen();
 		PrintAST(filepath);
 		ScreenFlip();//èÌÇ…ï\é¶Ç≥ÇπÇÈÇΩÇﬂ
         if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
@@ -205,6 +206,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             EndPaint(hWnd, &ps);
         }
         break;
+	
     case WM_DESTROY:
 		if (hWnd == mainHwnd) {
 			PostQuitMessage(0);

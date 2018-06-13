@@ -1,8 +1,9 @@
 #pragma once
 
-#include "Node.cpp"
+#include "Map.cpp"
 #include "DxLib.h"
 #include "clang-c\Index.h"
+using namespace std;
 
 CXFile file;
 Map map;
@@ -14,14 +15,14 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 	CXType t = clang_getCursorType(cursor);
 	CXString typeStr = clang_getTypeSpelling(t);
 
-	CXCursor parentTest = clang_getCursorSemanticParent(cursor);
+	//CXCursor parentTest = clang_getCursorSemanticParent(cursor);
 	//CXSourceRange test = clang_getCursorExtent(cursor);
 	CXSourceRange test = clang_getCursorReferenceNameRange(cursor, CXNameRange_WantQualifier, 0);
 	//CXSourceRange test = clang_Cursor_getCommentRange(cursor);
 	unsigned int line, column, offset;
 	
-	clang_getRangeStart(test);
-	clang_getRangeEnd(test);
+	//clang_getRangeStart(test);
+	//clang_getRangeEnd(test);
 	//clang_getSpellingLocation(clang_getCursorLocation(cursor), &file, &line, &column, &offset);
 	clang_getExpansionLocation(clang_getCursorLocation(cursor), &file, &line, &column, &offset);
 	//CXString spellStr = clang_getcursor
@@ -31,46 +32,67 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 	printfDx("%s ", clang_getCString(clang_getCursorDisplayName(parentTest)));//親要素
 	printfDx("(%d, %d) ", test.begin_int_data, test.end_int_data);//要素サイズ
 	*/
-	const char* usrchar = clang_getCString(usrStr);
+	string usrchar = clang_getCString(usrStr);
 	/*
 	printfDx("%s : ", usrchar);//定義出力
 	printfDx("%s ", clang_getCString(typeStr));//型出力
 	printfDx("%s ", clang_getCString(disStr));//変数名出力
 	//printfDx("def: %s ", clang_getCString(clang_getCursorDisplayName(dif)));
 	*/
-	char* text = (char*)malloc(100);
-	*text = '\0';
-	//strcat_s(text, 100, "");
-
+	string text("");
+	/*
 	if (strcmp(usrchar, "BinaryOperator") == 0
 		|| strcmp(usrchar, "IntegerLiteral") == 0
 		|| strcmp(usrchar, "ParmDecl") == 0
 		|| strcmp(usrchar, "ReturnStmt") == 0) {//見つかった場合
-	
+	*/
+	/*その行のコードの生成*/
+	//if (usrchar != "UnexposedExpr"){
 		CXToken *tokens;
 		unsigned numTokens;
 		CXSourceRange range = clang_getCursorExtent(cursor);
 		CXTranslationUnit tu = clang_Cursor_getTranslationUnit(cursor);
 		clang_tokenize(tu, range, &tokens, &numTokens);
+		string type("");
 		for (unsigned i = 0; i < numTokens; i++) {
 			CXString s = clang_getTokenSpelling(tu, tokens[i]);
 			//printfDx("[%s] ", clang_getCString(s));//中身の表示
-			strcat_s(text, 100, clang_getCString(s));
+			text += (clang_getCString(s) + string(" "));
 			clang_disposeString(s);
 		}
+		if (numTokens > 0) {
+			type = clang_getCString(clang_getTokenSpelling(tu, tokens[0]));
+			text.pop_back();
+		}
+	//}
+	if (usrchar == "DeclRefExpr") {
+		map.AddVariableRelation(line, text);
 	}
-	//printfDx("\n");
+
+	string variableName(clang_getCString(disStr));
+	map.AddVariableName(line, type, variableName);
+	if (usrchar != "DeclStmt" &&
+		usrchar != "BinaryOperator" &&
+		usrchar != "ReturnStmt") {
+		//text = "";
+	}
+
+	if (map.memory != line) {
+		//if (usrchar != "ForStmt" && usrchar != "IfStmt") {
+			Node node(line, test.begin_int_data, test.end_int_data, usrchar, text);
+			map.AddMap(node);
+			//map.memory = line;
+		//}
+	}
 
 	clang_disposeString(usrStr);
 	clang_disposeString(typeStr);
 	clang_disposeString(disStr);
-
-	Node node(line, offset, text, 0);
-	map.Add(node);
 	return CXChildVisit_Recurse;
 }
 
-int PrintAST(char* _filepath)
+int i = 0;
+int PrintAST(char* _filepath) 
 {
 	/*構文エラーを表示*/
 	/*
@@ -98,7 +120,7 @@ int PrintAST(char* _filepath)
 	return 1;
 
 	*/
-
+	
 	CXIndex index = clang_createIndex(1, 1);
 	CXTranslationUnit unit = clang_parseTranslationUnit(
 		index,
@@ -125,3 +147,28 @@ int PrintAST(char* _filepath)
 	clang_disposeIndex(index);
 	return 1;
 }
+
+/*
+・Decl : Declare, 宣言
+FunctionDecl : 関数宣言
+ParamVarDecl : 関数の引数の宣言
+VarDecl : 変数の宣言
+・Stmt : Statement, 文
+CompoundStmt : ブロック文
+DeclStmt : 変数の宣言文(VarDeclから成る)
+ForStmt : For文
+IfStmt : If文
+ReturnStmt : Return文
+・Expr : Expression, 式
+CStyleCastExpr : キャスト式
+ImplicitCastExpr : 暗黙キャスト式
+CallExpr : 関数呼び出し式
+DeclRefExpr : 変数呼び出し式
+BinaryOperation : 二項演算子
+UnaryOperation : 単項演算子
+ArraySubscriptExpr : 配列表現のための式
+MemberExpr : 構造体などのメンバを指す式
+・Literal : リテラル
+IntegerLiteral : 整数
+StringLiteral : 文字列
+*/
