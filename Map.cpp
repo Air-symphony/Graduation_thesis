@@ -10,58 +10,10 @@ private:
 	vector<string> variableType;
 	vector<string> variableName;
 	vector<vector<int>> variableRelation;
-public:
-	int memory;
-	Map() {
-		init();
-	}
-
-	void init() {
-		memory = 0;
-		for (int i = (int)map.size(); i > 0; i--) {
-			map.pop_back();
-		}
-		for (int i = (int)variableName.size(); i > 0; i--) {
-			variableName.pop_back();
-		}
-		for (int i = (int)variableRelation.size(); i > 0; i--) {
-			variableRelation.pop_back();
-		}
-	}
-
-	void AddMap(Node node) {
-		map.push_back(node);
-	}
-
-	int AddVariableName(int line, string type, string variable) {
-		if (variable == "") return 0;
-
-		auto itr = std::find(variableName.begin(), variableName.end(), variable);//最初の要素のイテレータを返す
-		if (itr == variableName.end()) {//新規の変数の場合
-			variableName.push_back(variable);
-			variableType.push_back(type);
-			vector<int> list{ line };
-			variableRelation.push_back(list);
-		}
-		return 1;
-	}
-
-	int AddVariableRelation(int line, string variable) {
-		auto itr = find(variableName.begin(), variableName.end(), variable);
-		int index = (int)distance(variableName.begin(), itr);
-		if (index != variableName.size()) { // 発見できたとき
-			if (line - 1 < 0 || map.size() <= line - 1) {
-				printfDx("");
-			}
-			//variableRelation[index].push_back(line);
-			//map[line - 1].SetDefIndex(variableRelation[index][0]);
-			return 1;
-		}
-		return 0;
-	}
-
-	int index = 0;//debug
-	void Draw() {
+	/*Debug*/
+	int index = 0;
+	/*Debug*/
+	int getDebugSize(){
 		int range = 25;
 		if (CheckHitKey(KEY_INPUT_UP) != 0) {
 			if (index > 0) {
@@ -79,12 +31,73 @@ public:
 		if (map.size() < size) {
 			size = (int)map.size();
 			index = size - range;
+			if (index < 0) index = 0;
 		}
+		return size;
+	}
+public:
+	int offset = 0;
+	int id = 0;
+	bool ifStmt = false;
+
+	Map() {
+		init();
+	}
+
+	void init() {
+		id = 0;
+		offset = 0;
+		ifStmt = false;
+		for (int i = (int)map.size(); i > 0; i--) {
+			map.pop_back();
+		}
+		for (int i = (int)variableName.size(); i > 0; i--) {
+			variableName.pop_back();
+		}
+		for (int i = (int)variableRelation.size(); i > 0; i--) {
+			variableRelation.pop_back();
+		}
+	}
+
+	void AddMap(Node node) {
+		map.push_back(node);
+	}
+
+	int AddVariableName(int _id, string type, string variable) {
+		if (variable == "") return 0;
+
+		auto itr = std::find(variableName.begin(), variableName.end(), variable);//最初の要素のイテレータを返す
+		if (itr == variableName.end()) {//新規の変数の場合
+			variableName.push_back(variable);
+			variableType.push_back(type);
+			vector<int> list{ _id };
+			variableRelation.push_back(list);
+		}
+		return 1;
+	}
+
+	int AddVariableRelation(int _id, string variable) {
+		auto itr = find(variableName.begin(), variableName.end(), variable);
+		int index = (int)distance(variableName.begin(), itr);
+		if (index != variableName.size()) { // 発見できたとき
+			if (_id - 1 < 0 || map.size() <= _id - 1) {
+				printfDx("");
+			}
+			variableRelation[index].push_back(_id);
+			//map[_id - 1].SetDefIndex(variableRelation[index][0]);
+			return 1;
+		}
+		return 0;
+	}
+
+	void Draw() {
+		int size = getDebugSize();
 		for (int i = index; i < size; i++) {
-			printfDx("%d : ", i + 1);
+			//printfDx("%d : ", i);
 			printfDx(map[i].DrawNode().c_str());
 		}
 		printfDx("\n");
+		
 		for (int i = 0; i < variableName.size(); ++i) {
 			printfDx("%s ", variableType[i].c_str());
 			printfDx("%s => [", variableName[i].c_str());
@@ -93,6 +106,5 @@ public:
 			}
 			printfDx("]\n");
 		}
-		printfDx("\n");
 	}
 };

@@ -9,85 +9,85 @@ CXFile file;
 Map map;
 CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXClientData client_data)
 {
-	
-	CXString usrStr = clang_getCursorKindSpelling(clang_getCursorKind(cursor));
-	CXString disStr = clang_getCursorDisplayName(cursor);
-	CXType t = clang_getCursorType(cursor);
-	CXString typeStr = clang_getTypeSpelling(t);
+	/*clang内での型の文字列*/
+	CXCursorKind kind = clang_getCursorKind(cursor);
+	string clangVariableType = clang_getCString(clang_getCursorKindSpelling(kind));
 
+	/*変数名とコード*/
+	string variableName(clang_getCString(clang_getCursorDisplayName(cursor)));
+
+	/*コード内での型*/
+	CXType clangType = clang_getCursorType(cursor);
+	string typeStr = clang_getCString(clang_getTypeSpelling(clangType));
+
+	//CXString str = clang_getCursorSpelling(cursor);
 	//CXCursor parentTest = clang_getCursorSemanticParent(cursor);
 	//CXSourceRange test = clang_getCursorExtent(cursor);
-	CXSourceRange test = clang_getCursorReferenceNameRange(cursor, CXNameRange_WantQualifier, 0);
+	CXSourceRange nameRange = clang_getCursorReferenceNameRange(cursor, CXNameRange_WantQualifier, 0);
 	//CXSourceRange test = clang_Cursor_getCommentRange(cursor);
+
 	unsigned int line, column, offset;
-	
-	//clang_getRangeStart(test);
-	//clang_getRangeEnd(test);
-	//clang_getSpellingLocation(clang_getCursorLocation(cursor), &file, &line, &column, &offset);
 	clang_getExpansionLocation(clang_getCursorLocation(cursor), &file, &line, &column, &offset);
-	//CXString spellStr = clang_getcursor
 
 	/*
 	printfDx("<%d,%d,%d> ", line, column, offset);//行列番号
 	printfDx("%s ", clang_getCString(clang_getCursorDisplayName(parentTest)));//親要素
 	printfDx("(%d, %d) ", test.begin_int_data, test.end_int_data);//要素サイズ
-	*/
-	string usrchar = clang_getCString(usrStr);
-	/*
+	
 	printfDx("%s : ", usrchar);//定義出力
 	printfDx("%s ", clang_getCString(typeStr));//型出力
 	printfDx("%s ", clang_getCString(disStr));//変数名出力
 	//printfDx("def: %s ", clang_getCString(clang_getCursorDisplayName(dif)));
 	*/
-	string text("");
-	/*
-	if (strcmp(usrchar, "BinaryOperator") == 0
-		|| strcmp(usrchar, "IntegerLiteral") == 0
-		|| strcmp(usrchar, "ParmDecl") == 0
-		|| strcmp(usrchar, "ReturnStmt") == 0) {//見つかった場合
-	*/
+	
 	/*その行のコードの生成*/
-	//if (usrchar != "UnexposedExpr"){
-		CXToken *tokens;
-		unsigned numTokens;
-		CXSourceRange range = clang_getCursorExtent(cursor);
-		CXTranslationUnit tu = clang_Cursor_getTranslationUnit(cursor);
-		clang_tokenize(tu, range, &tokens, &numTokens);
-		string type("");
-		for (unsigned i = 0; i < numTokens; i++) {
-			CXString s = clang_getTokenSpelling(tu, tokens[i]);
-			//printfDx("[%s] ", clang_getCString(s));//中身の表示
-			text += (clang_getCString(s) + string(" "));
-			clang_disposeString(s);
+	string codeStr("");
+	CXToken *tokens;
+	unsigned numTokens;
+	CXSourceRange range = clang_getCursorExtent(cursor);
+	CXTranslationUnit tu = clang_Cursor_getTranslationUnit(cursor);
+	clang_tokenize(tu, range, &tokens, &numTokens);
+	for (unsigned i = 0; i < numTokens; i++) {
+		string str = clang_getCString(clang_getTokenSpelling(tu, tokens[i]));
+		//printfDx("[%s] ", clang_getCString(s));//中身の表示
+		codeStr += (str + string(" "));
+	}
+	if (numTokens > 0) {
+		codeStr.pop_back();
+	}
+	
+	if (//kind != CXCursorKind::CXCursor_DeclStmt &&
+		kind != CXCursorKind::CXCursor_VarDecl &&
+		kind != CXCursorKind::CXCursor_BinaryOperator &&
+		kind != CXCursorKind::CXCursor_UnaryOperator &&
+		kind != CXCursorKind::CXCursor_ReturnStmt) {
+		
+		if (map.ifStmt == false) {
+			codeStr = "";
 		}
-		if (numTokens > 0) {
-			type = clang_getCString(clang_getTokenSpelling(tu, tokens[0]));
-			text.pop_back();
-		}
-	//}
-	if (usrchar == "DeclRefExpr") {
-		map.AddVariableRelation(line, text);
+	}
+	if (map.offset > (int)nameRange.begin_int_data) {
+		codeStr = "";
 	}
 
-	string variableName(clang_getCString(disStr));
-	map.AddVariableName(line, type, variableName);
-	if (usrchar != "DeclStmt" &&
-		usrchar != "BinaryOperator" &&
-		usrchar != "ReturnStmt") {
-		//text = "";
-	}
+	if (codeStr != ""){
+		map.id++;
+		Node node(map.id, nameRange.begin_int_data, nameRange.end_int_data, clangVariableType, codeStr);
+		map.AddMap(node);
 
-	if (map.memory != line) {
-		//if (usrchar != "ForStmt" && usrchar != "IfStmt") {
-			Node node(line, test.begin_int_data, test.end_int_data, usrchar, text);
-			map.AddMap(node);
-			//map.memory = line;
-		//}
+		map.ifStmt = false;
+		map.offset = nameRange.end_int_data;
+		//printfDx("%s", node.DrawNode().c_str());
 	}
-
-	clang_disposeString(usrStr);
-	clang_disposeString(typeStr);
-	clang_disposeString(disStr);
+	if (kind == CXCursorKind::CXCursor_DeclRefExpr) {
+		map.AddVariableRelation(map.id, variableName);
+	}
+	map.AddVariableName(map.id, typeStr, variableName);
+	
+	if (kind == CXCursorKind::CXCursor_IfStmt) {
+		map.ifStmt = true;
+	}
+	
 	return CXChildVisit_Recurse;
 }
 
