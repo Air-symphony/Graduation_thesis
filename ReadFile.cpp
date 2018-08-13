@@ -37,4 +37,15 @@ public:
 		FileRead_close(fileHandle);
 		return true;
 	}
+
+	bool SaveFile(){
+		FILE *fp;
+		int err_no = fopen_s(&fp, filepath, "w");
+		if (err_no != 0) return false;
+    
+		fprintf(fp, "%f\n", "");
+
+		fclose(fp);
+		return true;
+	}
 };

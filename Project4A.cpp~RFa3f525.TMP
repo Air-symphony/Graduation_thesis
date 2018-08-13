@@ -9,6 +9,8 @@
 #include <Commdlg.h>
 #pragma comment(lib, "Comdlg32.lib")
 
+#define IDM_KITTY 1
+
 using namespace std;
 
 #define MAX_LOADSTRING 100
@@ -26,6 +28,7 @@ INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
 HWND mainHwnd, Dxhwnd;
 HWND texthwnd;
+int index = 0;
 
 int DXInit(int x, int y) {
 	SetOutApplicationLogValidFlag(FALSE);//Log.txtの出力
@@ -181,43 +184,34 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	static OPENFILENAME ofn = { 0 };
 	static TCHAR strFile[MAX_PATH];
+	HMENU sysMenu;
+	MENUITEMINFO mii;
+
     switch (message)
     {
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
-			static OPENFILENAME ofn = { 0 };
             // 選択されたメニューの解析:
             switch (wmId)
             {
             case IDM_ABOUT:
                 DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
                 break;
-			
-			/*ファイルダイアログ*/
-			case IDM_FILEOPEN:
-			case IDM_FILESAVE:
+			/*
+			case IACE_CHILDREN:
 				ofn.lStructSize = sizeof(OPENFILENAME);
 				ofn.hwndOwner = hWnd;
-				ofn.lpstrFilter = TEXT("C++ SorceFIle {*.cpp}\0*.cpp\0")
+				ofn.lpstrFilter = TEXT("Text files {*.txt}\0*.txt\0")
 					TEXT("All files {*.*}\0*.*\0\0");
 				ofn.lpstrFile = strFile;
 				ofn.nMaxFile = MAX_PATH;
 				ofn.Flags = OFN_FILEMUSTEXIST | OFN_OVERWRITEPROMPT;
-				switch (wmId) {
-					case IDM_FILEOPEN:
-						GetOpenFileName(&ofn);
-						break;
-					case IDM_FILESAVE:
-						GetSaveFileName(&ofn);
-						break;
-					default:
-						return 0;
-				}
-				//MessageBox(0, strFile, _TEXT("選択されたファイル名"), MB_OK);
-				break;
-			
+				return 0;
+			break;
+			*/
             case IDM_EXIT:
                 DestroyWindow(hWnd);
                 break;
@@ -276,6 +270,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_CREATE:
 	{
+		sysMenu = GetSystemMenu(mainHwnd, FALSE);
+
+		mii.cbSize = sizeof(MENUITEMINFO);
+		mii.fMask = MIIM_TYPE | MIIM_ID;
+		mii.wID = IDM_KITTY;
+		mii.fType = MFT_STRING;
+		mii.dwTypeData = TEXT("Kitty on your lap");
+
+		InsertMenuItem(sysMenu, 0, TRUE, &mii);
+
 		Dxhwnd = CreateWindow(TEXT("STATIC"), TEXT("ERROR"),
 			WS_CHILD | WS_VISIBLE,
 			0, 0, 700, 700, hWnd, (HMENU)1,
@@ -309,19 +313,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		);
 		SendMessage(texthwnd, WM_SETFONT, (WPARAM)font, MAKELPARAM(FALSE, 0));
 	}
-	break;
-	
-	/*menuバーの反応がなくなる*/
+		break;
 	/*
 	case WM_SYSCOMMAND:
-	
 		if (LOWORD(wParam) == IDM_KITTY) {
 			GetSystemMenu(mainHwnd, TRUE);
 		}
-	
-	break;
+		break;
 	*/
-	
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
     }

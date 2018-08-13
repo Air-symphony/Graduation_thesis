@@ -63,16 +63,20 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 		kind != CXCursorKind::CXCursor_ReturnStmt) {
 		
 		if (map.ifStmt == false) {
-			codeStr = "";
+			//codeStr = "";
 		}
 	}
 	if (map.offset > (int)nameRange.begin_int_data) {
-		codeStr = "";
+		//codeStr = "";
 	}
-
+	
 	if (codeStr != ""){
 		map.id++;
 		Node node(map.id, nameRange.begin_int_data, nameRange.end_int_data, clangVariableType, codeStr);
+		if (kind == CXCursorKind::CXCursor_UnaryOperator) {
+			node.AddInput(variableName);
+		}
+		node.AddOutput(variableName);
 		map.AddMap(node);
 
 		map.ifStmt = false;

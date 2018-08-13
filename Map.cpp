@@ -81,7 +81,7 @@ public:
 		int index = (int)distance(variableName.begin(), itr);
 		if (index != variableName.size()) { // ”­Œ©‚Å‚«‚½‚Æ‚«
 			if (_id - 1 < 0 || map.size() <= _id - 1) {
-				printfDx("");
+				return -1;
 			}
 			variableRelation[index].push_back(_id);
 			//map[_id - 1].SetDefIndex(variableRelation[index][0]);
