@@ -3,16 +3,20 @@
 
 class ReadFiles {
 private:
-	char filepath[50] = "TestCode\\test.cpp";
-
-	int fileHandle = 0;
+	static char filepath[100];// = "TestCode\\test.cpp";
+	static int fileHandle;
 
 public:
-	int SetFilePath(char* _filepath) {
+	static int SetFilePath(char* _filepath) {
 		return strcpy_s(filepath, _filepath);
 	}
 
-	bool PrintFile(HWND textbox) {
+	static char *GetFilepath() {
+		return filepath;
+	}
+
+	static bool PrintFile(HWND textbox) {
+		SetWindowText(textbox, "");
 		fileHandle = FileRead_open(filepath);
 
 		if(fileHandle == 0) {
@@ -38,7 +42,7 @@ public:
 		return true;
 	}
 
-	bool SaveFile(){
+	static bool SaveFile(){
 		FILE *fp;
 		int err_no = fopen_s(&fp, filepath, "w");
 		if (err_no != 0) return false;

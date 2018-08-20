@@ -27,6 +27,9 @@ INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 HWND mainHwnd, Dxhwnd;
 HWND texthwnd;
 
+char ReadFiles::filepath[100] = "TestCode\\Sample.cpp";
+int ReadFiles::fileHandle = 0;
+
 int DXInit(int x, int y) {
 	SetOutApplicationLogValidFlag(FALSE);//Log.txtの出力
 	ChangeWindowMode(TRUE);
@@ -87,13 +90,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     MSG msg;
 
-	ReadFiles readfile;
+	//ReadFiles::SetFilePath(filepath);
+	ReadFiles::PrintFile(texthwnd);
 
-	char* filepath = "TestCode\\Sample.cpp";
-	readfile.SetFilePath(filepath);
-	readfile.PrintFile(texthwnd);
-
-	PrintAST(filepath);
+	PrintAST(ReadFiles::GetFilepath());
 	ScreenFlip();
 
     // メイン メッセージ ループ:
@@ -101,7 +101,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     {
 		clsDx();
 		ClearDrawScreen();
-		PrintAST(filepath);
+		PrintAST(ReadFiles::GetFilepath());
 		ScreenFlip();//常に表示させるため
         if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
         {
@@ -208,6 +208,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				switch (wmId) {
 					case IDM_FILEOPEN:
 						GetOpenFileName(&ofn);
+						ReadFiles::SetFilePath(ofn.lpstrFile);
+						ReadFiles::PrintFile(texthwnd);
 						break;
 					case IDM_FILESAVE:
 						GetSaveFileName(&ofn);
