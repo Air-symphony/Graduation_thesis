@@ -37,9 +37,9 @@ private:
 	}
 public:
 	int id = 0;
-	/*’¼‘O‚Ìnode‚ÌOffset‚Ì•Û‘¶*/
-	int beginOffset, endOffset;
 	int skipOffset;
+	OffsetList scopeOffset;
+	OffsetList exprOffset;
 
 	Map() {
 		init();
@@ -47,7 +47,7 @@ public:
 
 	void init() {
 		id = 0;
-		beginOffset = endOffset = skipOffset = -10;
+		skipOffset = -1;
 
 		for (int i = (int)map.size(); i > 0; i--) {
 			map.pop_back();
@@ -58,15 +58,19 @@ public:
 		for (int i = (int)variableRelation.size(); i > 0; i--) {
 			variableRelation.pop_back();
 		}
+		scopeOffset.init();
+		exprOffset.init();
 	}
 
-	void AddNodeLevel(Node *node) {
-		int _index = id - 1;//’¼‘O‚Ìnode‚ð’²‚×‚é
-		if (0 > _index) return;
-
-		node->addLevel(map[_index].level, beginOffset, endOffset);
+	void CheckScope(Node *node) {
+		int scope = scopeOffset.CheckOffset(node->offset);
+		node->addScope(scope);
 	}
 
+	void CheckExpression(Node *node) {
+		int state = exprOffset.CheckOffset(node->offset);
+		node->addState(state);
+	}
 
 	void AddMap(Node node) {
 		map.push_back(node);

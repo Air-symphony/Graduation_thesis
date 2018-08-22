@@ -1,35 +1,34 @@
 #pragma once
-#include <vector>       // ヘッダファイルインクルード
+#include "Offset.cpp"
 #include <string>
 using namespace std;         //  名前空間指定
 
 class Node {
 private:
-	int id, start, end;
+	int id;
 	string type;
 	string text;
 	vector<string> output;
 	vector<string> input;
 public:
-	int level;
+	Offset offset;
+	int scope, state;
+	int parentID;
 
-	Node(int _id, int _start, int _end, string _type, string _text) {
+	Node(int _id, int _begin, int _end, string _type, string _text) {
 		id = _id;
-		level = 0;
-		start = _start;
-		end = _end;
+		parentID = scope = state = -1;
+		offset.Set(_begin, _end);
 		type = _type;
 		text = _text;
 	}
 
-	/*levelを加える*/
-	void addLevel(int parentLevel, int parentBegin, int parentEnd) {
-		if (parentBegin <= start && end <= parentEnd) {
-			level = parentLevel;
-			if ((parentBegin == start && end == parentEnd) == false) {
-				level++;
-			}
-		}
+	void addScope(int _scope) {
+		scope = _scope;
+	}
+
+	void addState(int _state) {
+		state = _state;
 	}
 
 	void AddInput(string variable) {
@@ -42,12 +41,16 @@ public:
 
 	string DrawNode() {
 		string str = "";
-		for (int i = 0; i < level; i++) {
+		for (int i = 0; i < scope; i++) {
 			str += "--";
 		}
-		str += std::to_string(id) + " : (" + to_string(start) + "-" + to_string(end) + ")";
+		for (int i = 0; i < state; i++) {
+			str += ">";
+		}
+		str += to_string(id) + " : ";// (" + to_string(offset.begin) + " - " + to_string(offset.end) + ")";
 		str += "<" + type + ">";
-		str += " " + text + " ";
+		str += "[" + text + "]";
+		/*
 		str += "[";
 		for (int i = 0; i < input.size(); i++) {
 			str += input[i] + ",";
@@ -62,8 +65,8 @@ public:
 		if (output.size() > 0) {
 			//str.pop_back();
 		}
-		str += "]\n";
-
-		return str;
+		str += "]";
+		*/
+		return str + "\n";
 	}
 };

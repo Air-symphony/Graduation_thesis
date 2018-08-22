@@ -85,12 +85,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     }
 
 	DXInit(700, 750);
+	SetFontSize(64);
 
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_PROJECT4A));
 
     MSG msg;
 
-	//ReadFiles::SetFilePath(filepath);
 	ReadFiles::PrintFile(texthwnd);
 
 	PrintAST(ReadFiles::GetFilepath());

@@ -50,35 +50,31 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 
 	string codeStr = GetCode(cursor);
 
-	if (map.skipOffset > (int)nameRange.begin_int_data) {
-		codeStr = "";
-	}
-	if (kind == CXCursorKind::CXCursor_ClassDecl ||
-		kind == CXCursorKind::CXCursor_CompoundStmt ||
-		kind == CXCursorKind::CXCursor_CXXMethod) {
+	if (map.skipOffset > (int)nameRange.begin_int_data ||
+		kind == CXCursorKind::CXCursor_CompoundStmt) {
 		codeStr = "";
 	}
 	
 	if (codeStr != ""){
-		//map.id++;
 		Node node(map.id, nameRange.begin_int_data, nameRange.end_int_data, clangVariableType, codeStr);
 
 		if (kind == CXCursorKind::CXCursor_UnaryOperator) {
 			node.AddInput(variableName);
 		}
 		node.AddOutput(variableName);
-		map.AddNodeLevel(&node);
+		map.CheckScope(&node);
+		map.CheckExpression(&node);
 		map.AddMap(node);
 
 		/*àÍî‘è„ÇÃäKëwÇÃÇ›Çï\é¶*/
 		if (kind == CXCursorKind::CXCursor_ForStmt ||
 			kind == CXCursorKind::CXCursor_WhileStmt || 
 			kind == CXCursorKind::CXCursor_IfStmt){
-			map.skipOffset = nameRange.end_int_data;
+			map.scopeOffset.AddOffset(nameRange.begin_int_data, nameRange.end_int_data);
 		}
-		map.beginOffset = nameRange.begin_int_data;
-		map.endOffset = nameRange.end_int_data;
-		//printfDx("%s", node.DrawNode().c_str());
+		else {
+			map.exprOffset.AddOffset(nameRange.begin_int_data, nameRange.end_int_data);
+		}
 	}
 	if (kind == CXCursorKind::CXCursor_DeclRefExpr) {
 		map.AddVariableRelation(map.id - 1, variableName);
