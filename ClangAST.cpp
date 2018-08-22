@@ -60,13 +60,14 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 	}
 	
 	if (codeStr != ""){
+		//map.id++;
 		Node node(map.id, nameRange.begin_int_data, nameRange.end_int_data, clangVariableType, codeStr);
 
 		if (kind == CXCursorKind::CXCursor_UnaryOperator) {
 			node.AddInput(variableName);
 		}
 		node.AddOutput(variableName);
-		map.AddNodeLevel(node);
+		map.AddNodeLevel(&node);
 		map.AddMap(node);
 
 		/*àÍî‘è„ÇÃäKëwÇÃÇ›Çï\é¶*/
@@ -80,9 +81,9 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 		//printfDx("%s", node.DrawNode().c_str());
 	}
 	if (kind == CXCursorKind::CXCursor_DeclRefExpr) {
-		map.AddVariableRelation(map.id, variableName);
+		map.AddVariableRelation(map.id - 1, variableName);
 	}
-	map.AddVariableName(map.id, typeStr, variableName);
+	map.AddVariableName(map.id - 1, typeStr, variableName);
 
 	return CXChildVisit_Recurse;
 }

@@ -22,10 +22,8 @@ public:
 		text = _text;
 	}
 
+	/*level‚ð‰Á‚¦‚é*/
 	void addLevel(int parentLevel, int parentBegin, int parentEnd) {
-		level = 0;
-		if (parentLevel < 0) return;
-
 		if (parentBegin <= start && end <= parentEnd) {
 			level = parentLevel;
 			if ((parentBegin == start && end == parentEnd) == false) {

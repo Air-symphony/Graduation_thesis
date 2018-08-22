@@ -38,8 +38,8 @@ private:
 public:
 	int id = 0;
 	/*’¼‘O‚Ìnode‚ÌOffset‚Ì•Û‘¶*/
-	int beginOffset = 0, endOffset = 0;
-	int skipOffset = 0;
+	int beginOffset, endOffset;
+	int skipOffset;
 
 	Map() {
 		init();
@@ -47,7 +47,7 @@ public:
 
 	void init() {
 		id = 0;
-		beginOffset = endOffset = skipOffset = 0;
+		beginOffset = endOffset = skipOffset = -10;
 
 		for (int i = (int)map.size(); i > 0; i--) {
 			map.pop_back();
@@ -60,11 +60,11 @@ public:
 		}
 	}
 
-	void AddNodeLevel(Node node) {
+	void AddNodeLevel(Node *node) {
 		int _index = id - 1;//’¼‘O‚Ìnode‚ð’²‚×‚é
 		if (0 > _index) return;
 
-		node.addLevel(map[_index].level, beginOffset, endOffset);
+		node->addLevel(map[_index].level, beginOffset, endOffset);
 	}
 
 
