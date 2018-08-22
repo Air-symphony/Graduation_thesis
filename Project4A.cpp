@@ -28,7 +28,7 @@ HWND mainHwnd, Dxhwnd;
 HWND texthwnd;
 
 char ReadFiles::filepath[100] = "TestCode\\Sample.cpp";
-int ReadFiles::fileHandle = 0;
+//int ReadFiles::fileHandle = 0;
 
 int DXInit(int x, int y) {
 	SetOutApplicationLogValidFlag(FALSE);//Log.txtÇÃèoóÕ

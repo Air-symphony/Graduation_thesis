@@ -7,6 +7,25 @@ using namespace std;
 
 CXFile file;
 Map map;
+
+/*その行のコードの生成*/
+string GetCode(CXCursor cursor) {
+	string codeStr("");
+	CXToken *tokens;
+	unsigned numTokens;
+	CXSourceRange range = clang_getCursorExtent(cursor);
+	CXTranslationUnit tu = clang_Cursor_getTranslationUnit(cursor);
+	clang_tokenize(tu, range, &tokens, &numTokens);
+	for (unsigned i = 0; i < numTokens; i++) {
+		string str = clang_getCString(clang_getTokenSpelling(tu, tokens[i]));
+		codeStr += (str + string(" "));
+	}
+	if (numTokens > 0) {
+		codeStr.pop_back();
+	}
+	return codeStr;
+}
+
 CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXClientData client_data)
 {
 	/*clang内での型の文字列*/
@@ -29,69 +48,42 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 	unsigned int line, column, offset;
 	clang_getExpansionLocation(clang_getCursorLocation(cursor), &file, &line, &column, &offset);
 
-	/*
-	printfDx("<%d,%d,%d> ", line, column, offset);//行列番号
-	printfDx("%s ", clang_getCString(clang_getCursorDisplayName(parentTest)));//親要素
-	printfDx("(%d, %d) ", test.begin_int_data, test.end_int_data);//要素サイズ
-	
-	printfDx("%s : ", usrchar);//定義出力
-	printfDx("%s ", clang_getCString(typeStr));//型出力
-	printfDx("%s ", clang_getCString(disStr));//変数名出力
-	//printfDx("def: %s ", clang_getCString(clang_getCursorDisplayName(dif)));
-	*/
-	
-	/*その行のコードの生成*/
-	string codeStr("");
-	CXToken *tokens;
-	unsigned numTokens;
-	CXSourceRange range = clang_getCursorExtent(cursor);
-	CXTranslationUnit tu = clang_Cursor_getTranslationUnit(cursor);
-	clang_tokenize(tu, range, &tokens, &numTokens);
-	for (unsigned i = 0; i < numTokens; i++) {
-		string str = clang_getCString(clang_getTokenSpelling(tu, tokens[i]));
-		//printfDx("[%s] ", clang_getCString(s));//中身の表示
-		codeStr += (str + string(" "));
+	string codeStr = GetCode(cursor);
+
+	if (map.skipOffset > (int)nameRange.begin_int_data) {
+		codeStr = "";
 	}
-	if (numTokens > 0) {
-		codeStr.pop_back();
-	}
-	
-	if (//kind != CXCursorKind::CXCursor_DeclStmt &&
-		kind != CXCursorKind::CXCursor_VarDecl &&
-		kind != CXCursorKind::CXCursor_BinaryOperator &&
-		kind != CXCursorKind::CXCursor_UnaryOperator &&
-		kind != CXCursorKind::CXCursor_ReturnStmt) {
-		
-		if (map.ifStmt == false) {
-			//codeStr = "";
-		}
-	}
-	if (map.offset > (int)nameRange.begin_int_data) {
-		//codeStr = "";
+	if (kind == CXCursorKind::CXCursor_ClassDecl ||
+		kind == CXCursorKind::CXCursor_CompoundStmt ||
+		kind == CXCursorKind::CXCursor_CXXMethod) {
+		codeStr = "";
 	}
 	
 	if (codeStr != ""){
-		map.id++;
 		Node node(map.id, nameRange.begin_int_data, nameRange.end_int_data, clangVariableType, codeStr);
+
 		if (kind == CXCursorKind::CXCursor_UnaryOperator) {
 			node.AddInput(variableName);
 		}
 		node.AddOutput(variableName);
+		map.AddNodeLevel(node);
 		map.AddMap(node);
 
-		map.ifStmt = false;
-		map.offset = nameRange.end_int_data;
+		/*一番上の階層のみを表示*/
+		if (kind == CXCursorKind::CXCursor_ForStmt ||
+			kind == CXCursorKind::CXCursor_WhileStmt || 
+			kind == CXCursorKind::CXCursor_IfStmt){
+			map.skipOffset = nameRange.end_int_data;
+		}
+		map.beginOffset = nameRange.begin_int_data;
+		map.endOffset = nameRange.end_int_data;
 		//printfDx("%s", node.DrawNode().c_str());
 	}
 	if (kind == CXCursorKind::CXCursor_DeclRefExpr) {
 		map.AddVariableRelation(map.id, variableName);
 	}
 	map.AddVariableName(map.id, typeStr, variableName);
-	
-	if (kind == CXCursorKind::CXCursor_IfStmt) {
-		map.ifStmt = true;
-	}
-	
+
 	return CXChildVisit_Recurse;
 }
 

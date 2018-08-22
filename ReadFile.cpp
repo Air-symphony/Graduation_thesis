@@ -4,7 +4,7 @@
 class ReadFiles {
 private:
 	static char filepath[100];// = "TestCode\\test.cpp";
-	static int fileHandle;
+	//int fileHandle;
 
 public:
 	static int SetFilePath(char* _filepath) {
@@ -17,7 +17,7 @@ public:
 
 	static bool PrintFile(HWND textbox) {
 		SetWindowText(textbox, "");
-		fileHandle = FileRead_open(filepath);
+		int fileHandle = FileRead_open(filepath);
 
 		if(fileHandle == 0) {
 			return false;
@@ -47,7 +47,7 @@ public:
 		int err_no = fopen_s(&fp, filepath, "w");
 		if (err_no != 0) return false;
     
-		fprintf(fp, "%f\n", "");
+		//fprintf(fp, "%f\n", "");
 
 		fclose(fp);
 		return true;

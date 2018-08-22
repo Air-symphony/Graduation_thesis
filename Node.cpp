@@ -11,12 +11,27 @@ private:
 	vector<string> output;
 	vector<string> input;
 public:
+	int level;
+
 	Node(int _id, int _start, int _end, string _type, string _text) {
 		id = _id;
+		level = 0;
 		start = _start;
 		end = _end;
 		type = _type;
 		text = _text;
+	}
+
+	void addLevel(int parentLevel, int parentBegin, int parentEnd) {
+		level = 0;
+		if (parentLevel < 0) return;
+
+		if (parentBegin <= start && end <= parentEnd) {
+			level = parentLevel;
+			if ((parentBegin == start && end == parentEnd) == false) {
+				level++;
+			}
+		}
 	}
 
 	void AddInput(string variable) {
@@ -28,8 +43,11 @@ public:
 	}
 
 	string DrawNode() {
-		string str = std::to_string(id) + " : (" + to_string(start) + "-" + to_string(end) + ")";
-		//str += "def(" + to_string(defIndex) + ")";
+		string str = "";
+		for (int i = 0; i < level; i++) {
+			str += "--";
+		}
+		str += std::to_string(id) + " : (" + to_string(start) + "-" + to_string(end) + ")";
 		str += "<" + type + ">";
 		str += " " + text + " ";
 		str += "[";

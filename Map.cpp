@@ -36,9 +36,10 @@ private:
 		return size;
 	}
 public:
-	int offset = 0;
 	int id = 0;
-	bool ifStmt = false;
+	/*’¼‘O‚Ìnode‚ÌOffset‚Ì•Û‘¶*/
+	int beginOffset = 0, endOffset = 0;
+	int skipOffset = 0;
 
 	Map() {
 		init();
@@ -46,8 +47,8 @@ public:
 
 	void init() {
 		id = 0;
-		offset = 0;
-		ifStmt = false;
+		beginOffset = endOffset = skipOffset = 0;
+
 		for (int i = (int)map.size(); i > 0; i--) {
 			map.pop_back();
 		}
@@ -59,8 +60,17 @@ public:
 		}
 	}
 
+	void AddNodeLevel(Node node) {
+		int _index = id - 1;//’¼‘O‚Ìnode‚ð’²‚×‚é
+		if (0 > _index) return;
+
+		node.addLevel(map[_index].level, beginOffset, endOffset);
+	}
+
+
 	void AddMap(Node node) {
 		map.push_back(node);
+		id++;
 	}
 
 	int AddVariableName(int _id, string type, string variable) {
