@@ -14,13 +14,15 @@ public:
 	Offset offset;
 	int scope, state;
 	int parentID;
+	string variableName;
 
-	Node(int _id, int _begin, int _end, string _type, string _text) {
+	Node(int _id, int _begin, int _end, string _type, string _text, string _variableName) {
 		id = _id;
 		parentID = scope = state = -1;
 		offset.Set(_begin, _end);
 		type = _type;
 		text = _text;
+		variableName = _variableName;
 	}
 
 	void addScope(int _scope) {
@@ -31,16 +33,31 @@ public:
 		state = _state;
 	}
 
-	void AddInput(string variable) {
-		input.push_back(variable);
+	bool AddInput(string variable) {
+		if (variable.size() == 0) return false;
+
+		auto itr = std::find(input.begin(), input.end(), variable);//最初の要素のイテレータを返す
+		if (itr == input.end()) {//新規の変数の場合
+			input.push_back(variable);
+			return true;
+		}
+		return false;
 	}
 
-	void AddOutput(string variable) {
-		output.push_back(variable);
+	bool AddOutput(string variable) {
+		if (variable.size() == 0) return false;
+
+		auto itr = std::find(output.begin(), output.end(), variable);//最初の要素のイテレータを返す
+		if (itr == output.end()) {//新規の変数の場合
+			output.push_back(variable);
+			return true;
+		}
+		return false;
 	}
 
 	string DrawNode() {
 		string str = "";
+		//str += "(" + to_string(scope) + "," + to_string(state) + ") ";
 		for (int i = 0; i < scope; i++) {
 			str += "--";
 		}
@@ -48,9 +65,10 @@ public:
 			str += ">";
 		}
 		str += to_string(id) + " : ";// (" + to_string(offset.begin) + " - " + to_string(offset.end) + ")";
+		str += variableName + " ";
 		str += "<" + type + ">";
 		str += "[" + text + "]";
-		/*
+		
 		str += "[";
 		for (int i = 0; i < input.size(); i++) {
 			str += input[i] + ",";
@@ -58,7 +76,7 @@ public:
 		if (input.size() > 0) {
 			//str.pop_back();
 		}
-		str += " => ";
+		str += "=> ";
 		for (int i = 0; i < output.size(); i++) {
 			str += output[i] + ",";
 		}
@@ -66,7 +84,7 @@ public:
 			//str.pop_back();
 		}
 		str += "]";
-		*/
+		
 		return str + "\n";
 	}
 };

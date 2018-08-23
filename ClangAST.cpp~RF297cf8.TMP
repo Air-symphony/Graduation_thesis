@@ -50,97 +50,34 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 
 	string codeStr = GetCode(cursor);
 
-	if (kind != CXCursorKind::CXCursor_CXXMethod &&
-		kind != CXCursorKind::CXCursor_CompoundStmt &&
-		kind != CXCursorKind::CXCursor_DeclStmt) 
-	{	
-		if (kind == CXCursorKind::CXCursor_ClassDecl ||
-			kind == CXCursorKind::CXCursor_CXXAccessSpecifier ||
-			kind == CXCursorKind::CXCursor_ForStmt ||
-			kind == CXCursorKind::CXCursor_WhileStmt ||
-			kind == CXCursorKind::CXCursor_IfStmt)
-		{
-			codeStr = "";
-		}
+	if (//map.skipOffset > (int)nameRange.begin_int_data ||
+		kind == CXCursorKind::CXCursor_CompoundStmt) {
+		codeStr = "";
+	}
+	
+	if (codeStr != ""){
 		Node node(map.id, nameRange.begin_int_data, nameRange.end_int_data, clangVariableType, codeStr, variableName);
 
+		/*i++‚È‚Ç*/
+		if (kind == CXCursorKind::CXCursor_UnaryOperator) {
+			node.AddInput(variableName);
+		}
+		node.AddOutput(variableName);
 		map.CheckScope(&node);
 		map.CheckExpression(&node);
-		map.OpenLock(node);
-		/*•Ï”éŒ¾*/
-		if (kind == CXCursorKind::CXCursor_ParmDecl) {
-			node.AddOutput(variableName);
-			map.mid = map.id;
-			map.mstate = node.state;
-		}
-		else if (kind == CXCursorKind::CXCursor_VarDecl || 
-			kind == CXCursorKind::CXCursor_ReturnStmt)
-		{
-			node.AddOutput(variableName);
-			map.mid = map.id;
-			map.mstate = node.state;
-			map.varLock = map.varFlag = true;
-		}
-		/*i++‚È‚Ç*/
-		else if (kind == CXCursorKind::CXCursor_UnaryOperator) {
-			map.mid = map.id;
-			map.mstate = node.state;
-			map.unaryFlag = true;
-		}
+		map.AddMap(node);
+
 		/*‚»‚Ì®‚ÌÚ×‚ğ’²‚×‚é*/
-		else if (kind == CXCursorKind::CXCursor_BinaryOperator)
+		if (kind == CXCursorKind::CXCursor_BinaryOperator ||
+			kind == CXCursorKind::CXCursor_VarDecl ||
+			kind == CXCursorKind::CXCursor_ParmDecl)
 		{
-			//”äŠr‰‰Zq‚ğŠÜ‚Ş®‚Ìê‡
-			if ((codeStr.find("<") != std::string::npos) ||
-				(codeStr.find(">") != std::string::npos) ||
-				(codeStr.find("==") != std::string::npos)
-				) {
-				if (!map.varLock) {
-					map.mid = map.id;
-					map.mstate = node.state;
-				}
-				map.comparisonFlag = true;
-			}
-			//a = b = c, a = b + c‚Ì‚È‚Ç‚ÌŒŸ’m
-			else if(!map.binaryLock) {
-				if (!map.varLock) {
-					map.mid = map.id;
-					map.mstate = node.state;
-				}
-				map.binaryLock = true;
-				int equalCount = 0, operatorCount = 0;
-				char key = '=';
-				char keys[4] = { '+', '-', '*', '/' };
-				for (int i = 0; i < codeStr.size(); i++) {
-					char target = codeStr[i];
-					if (key == target) {
-						equalCount++;
-					}
-					for (int i = 0; i < 4; i++) {
-						if (keys[i] == target) {
-							operatorCount++;
-						}
-					}
-				}
-				map.equalCount = equalCount;
-				map.operatorCount = operatorCount + equalCount + 1;
-				map.assignmentFlag = (equalCount > 0);
-				if (!map.assignmentFlag) {
-					//map.operatorCount += 1;//a + b [2=>0]
-				}
-			}
+
 		}
 		/*ŠÖ”ŒÄ‚Ño‚µ*/
 		if (kind == CXCursorKind::CXCursor_CallExpr) {
-			//map.callExpr = true;
+			map.callExpr = true;
 		}
-
-		if (!map.SetNodeAbility(&node))// {}
-			map.AddMap(node);
-
-		//node.AddOutput(variableName);
-
-	
 		/*ˆê”Ôã‚ÌŠK‘w‚Ì‚İ‚ğ•\¦*/
 		if (kind == CXCursorKind::CXCursor_ForStmt ||
 			kind == CXCursorKind::CXCursor_WhileStmt || 
@@ -152,13 +89,11 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 			map.exprOffset.AddOffset(nameRange.begin_int_data, nameRange.end_int_data);
 		}
 	}
-	
-	/*
 	if (kind == CXCursorKind::CXCursor_DeclRefExpr) {
 		map.AddVariableRelation(map.id - 1, variableName);
 	}
 	map.AddVariableName(map.id - 1, typeStr, variableName);
-	*/
+
 	return CXChildVisit_Recurse;
 }
 

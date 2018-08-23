@@ -37,9 +37,18 @@ private:
 	}
 public:
 	int id = 0;
-	int skipOffset;
+	//int skipOffset;
 	OffsetList scopeOffset;
 	OffsetList exprOffset;
+	bool ability;
+	int mid, mstate;
+	int equalCount;
+	bool unaryFlag;
+	bool comparisonFlag;
+	bool assignmentFlag = false;
+	int operatorCount;
+	bool binaryLock;
+	bool varLock, varFlag;
 
 	Map() {
 		init();
@@ -47,15 +56,19 @@ public:
 
 	void init() {
 		id = 0;
-		skipOffset = -1;
-
-		for (int i = (int)map.size(); i > 0; i--) {
+		equalCount = 0;
+		assignmentFlag = false;
+		//callExpr = false;
+		mid = mstate = -1;
+		//skipOffset = -1;
+		int i = 0;
+		for (i = (int)map.size(); i > 0; i--) {
 			map.pop_back();
 		}
-		for (int i = (int)variableName.size(); i > 0; i--) {
+		for (i = (int)variableName.size(); i > 0; i--) {
 			variableName.pop_back();
 		}
-		for (int i = (int)variableRelation.size(); i > 0; i--) {
+		for (i = (int)variableRelation.size(); i > 0; i--) {
 			variableRelation.pop_back();
 		}
 		scopeOffset.init();
@@ -75,6 +88,67 @@ public:
 	void AddMap(Node node) {
 		map.push_back(node);
 		id++;
+	}
+
+	bool OpenLock(Node node) {
+		if (node.state <= mstate) {
+			mstate = -1;
+			binaryLock = varLock = unaryFlag = varFlag = comparisonFlag = false;
+			return true;
+		}
+		return false;
+	}
+	bool SetNodeAbility(Node *node, bool input = true) {
+		if (mid == id) return false;
+		/*
+		if (node->state <= mstate) {
+			mstate = -1;
+			varLock = unaryFlag = varFlag = comparisonFlag = false;
+			return false;
+		}
+		*/
+		if(mstate < 0) return false;
+
+		/*Ž©•ª‚æ‚è‰º‚Ìî•ñ‚Ìê‡*/
+		if (varFlag) {
+			map[mid].AddInput(node->variableName);
+			varFlag = false;
+			return true;
+		}
+		else if (unaryFlag) {
+			map[mid].AddInput(node->variableName);
+			map[mid].AddOutput(node->variableName);
+			unaryFlag = false;
+			return true;
+		}
+		else if (comparisonFlag) {
+			map[mid].AddInput(node->variableName);
+		}
+		else if (operatorCount > 0) {
+			bool insert = false;
+			if (assignmentFlag) {
+				insert = map[mid].AddOutput(node->variableName);
+				assignmentFlag = (equalCount > 1);
+			}
+			else {
+				insert = map[mid].AddInput(node->variableName);
+			}
+			if (insert) {
+				operatorCount--;
+				equalCount--;
+			}
+		}
+		//a = b + c 2 2=>1
+		//b + c 1 2=>0
+		/*
+		if (input) {
+			map[mid].AddInput(node->variableName);
+		}
+		else {
+			map[mid].AddOutput(node->variableName);
+		}
+		*/
+		return true;
 	}
 
 	int AddVariableName(int _id, string type, string variable) {
@@ -112,6 +186,7 @@ public:
 		}
 		printfDx("\n");
 		
+		/*
 		for (int i = 0; i < variableName.size(); ++i) {
 			printfDx("%s ", variableType[i].c_str());
 			printfDx("%s => [", variableName[i].c_str());
@@ -120,5 +195,6 @@ public:
 			}
 			printfDx("]\n");
 		}
+		*/
 	}
 };

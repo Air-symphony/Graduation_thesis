@@ -85,7 +85,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     }
 
 	DXInit(700, 750);
-	SetFontSize(64);
+	SetLogFontSize(20);
 
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_PROJECT4A));
 
