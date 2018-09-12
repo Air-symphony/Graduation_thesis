@@ -28,6 +28,7 @@ HWND mainHwnd, Dxhwnd;
 HWND texthwnd;
 
 char ReadFiles::filepath[100] = "TestCode\\Sample.cpp";
+//Graph graph;
 //int ReadFiles::fileHandle = 0;
 
 int DXInit(int x, int y) {
@@ -55,6 +56,31 @@ int DXInit(int x, int y) {
 	//CloseWindow(hMainWnd);
 	//DestroyWindow(hMainWnd);
 	return 1;
+}
+
+int counter = 0, FpsTime[2] = { 0, }, FpsTime_i = 0;
+double Fps = 0.0;
+
+void init() {
+	counter = 0, FpsTime[2] = { 0, }, FpsTime_i = 0;
+	Fps = 0.0;
+}
+
+void FpsTimeFanction() {
+	if (FpsTime_i == 0)
+		FpsTime[0] = GetNowCount();               //1周目の時間取得
+	if (FpsTime_i == 29) {
+		FpsTime[1] = GetNowCount();               //30周目の時間取得
+		Fps = 1000.0f / ((FpsTime[1] - FpsTime[0]) / 50.0f);//測定した値からfpsを計算
+		FpsTime_i = 0;//カウントを初期化
+	}
+	else {
+		FpsTime_i++;//現在何周目かカウント
+	}
+	DrawFormatString(400, 10, GetColor(255, 255, 255), "FpsTime_i[%d]", FpsTime_i); //fpsを表示
+	if (Fps != 0)
+		DrawFormatString(530, 10, GetColor(255, 255, 255), "FPS[%.1f]", Fps); //fpsを表示
+	return;
 }
 // 子ウインドウのプロージャ
 LRESULT CALLBACK ChildProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
@@ -95,13 +121,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	PrintAST(ReadFiles::GetFilepath());
 	ScreenFlip();
-
+	FpsTime_i = 0;
     // メイン メッセージ ループ:
     while (GetMessage(&msg, nullptr, 0, 0) && ProcessMessage() == 0)
     {
 		clsDx();
 		ClearDrawScreen();
 		PrintAST(ReadFiles::GetFilepath());
+		FpsTimeFanction();
 		ScreenFlip();//常に表示させるため
         if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
         {

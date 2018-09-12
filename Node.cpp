@@ -1,10 +1,13 @@
 #pragma once
+#include "Graphics.cpp"
 #include "Offset.cpp"
 #include <string>
 using namespace std;         //  –¼‘O‹óŠÔŽw’è
 
 class Node {
 private:
+	static Graph nodeGraph;
+	int x, y;
 	int id;
 	string type;
 	string text;
@@ -13,16 +16,17 @@ private:
 public:
 	Offset offset;
 	int scope, state;
-	int parentID;
 	string variableName;
 
 	Node(int _id, int _begin, int _end, string _type, string _text, string _variableName) {
+		x = y = 0;
 		id = _id;
-		parentID = scope = state = -1;
+		scope = state = -1;
 		offset.Set(_begin, _end);
 		type = _type;
 		text = _text;
 		variableName = _variableName;
+		nodeGraph.SetGraph(LoadGraph("picture\\node.png"));
 	}
 
 	void addScope(int _scope) {
@@ -68,7 +72,7 @@ public:
 		str += variableName + " ";
 		str += "<" + type + ">";
 		str += "[" + text + "]";
-		
+
 		str += "[";
 		for (int i = 0; i < input.size(); i++) {
 			str += input[i] + ",";
@@ -84,7 +88,11 @@ public:
 			//str.pop_back();
 		}
 		str += "]";
-		
+
 		return str + "\n";
+	}
+	
+	bool DrawNode(int i) {
+		return true;
 	}
 };

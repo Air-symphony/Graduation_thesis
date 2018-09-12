@@ -1,5 +1,5 @@
 #pragma once
-#include "DxLib.h"
+#include "Arrow.cpp"
 #include "Node.cpp"
 
 class Map {
@@ -11,7 +11,8 @@ private:
 	vector<string> variableName;
 	vector<vector<int>> variableRelation;
 	/*Debug*/
-	int index = 0;
+	int index = 0; bool debug = false;
+	int count = 0;
 	/*Debug*/
 	int getDebugSize(){
 		int range = 25;
@@ -25,6 +26,15 @@ private:
 				index++;
 			}
 		}
+		/*debugƒ‚[ƒhØ‘Ö*/
+		if (CheckHitKey(KEY_INPUT_LEFT) != 0) {
+			count++;
+			if (count == 1)
+				debug = !debug;
+		}
+		else {
+			count = 0;
+		}
 		printfDx("[%d]\n", map.size());
 
 		int size = index + range;
@@ -37,18 +47,15 @@ private:
 	}
 public:
 	int id = 0;
-	//int skipOffset;
 	OffsetList scopeOffset;
 	OffsetList exprOffset;
-	bool ability;
 	int mid, mstate;
-	int equalCount;
+	int equalCount, operatorCount;
 	bool unaryFlag;
 	bool comparisonFlag;
-	bool assignmentFlag = false;
-	int operatorCount;
-	bool binaryLock;
-	bool varLock, varFlag;
+	bool assignmentFlag;
+	bool callFlag;
+	bool binaryLock, varLock, varFlag;
 
 	Map() {
 		init();
@@ -56,11 +63,10 @@ public:
 
 	void init() {
 		id = 0;
-		equalCount = 0;
-		assignmentFlag = false;
-		//callExpr = false;
 		mid = mstate = -1;
-		//skipOffset = -1;
+		equalCount = operatorCount = 0;
+		unaryFlag = comparisonFlag = assignmentFlag = callFlag = false;
+		binaryLock = varLock = varFlag = false;
 		int i = 0;
 		for (i = (int)map.size(); i > 0; i--) {
 			map.pop_back();
@@ -93,36 +99,34 @@ public:
 	bool OpenLock(Node node) {
 		if (node.state <= mstate) {
 			mstate = -1;
-			binaryLock = varLock = unaryFlag = varFlag = comparisonFlag = false;
+			binaryLock = varLock = unaryFlag = callFlag = 
+				varFlag = comparisonFlag = assignmentFlag = false;
 			return true;
 		}
 		return false;
 	}
+
 	bool SetNodeAbility(Node *node, bool input = true) {
-		if (mid == id) return false;
-		/*
-		if (node->state <= mstate) {
-			mstate = -1;
-			varLock = unaryFlag = varFlag = comparisonFlag = false;
-			return false;
-		}
-		*/
-		if(mstate < 0) return false;
+		if (mid == id || mstate < 0) return false;
 
 		/*Ž©•ª‚æ‚è‰º‚Ìî•ñ‚Ìê‡*/
 		if (varFlag) {
 			map[mid].AddInput(node->variableName);
-			varFlag = false;
 			return true;
 		}
 		else if (unaryFlag) {
 			map[mid].AddInput(node->variableName);
 			map[mid].AddOutput(node->variableName);
-			unaryFlag = false;
+			//unaryFlag = false;
 			return true;
 		}
 		else if (comparisonFlag) {
 			map[mid].AddInput(node->variableName);
+			return true;
+		}
+		else if (callFlag) {
+			map[mid].AddInput(node->variableName);
+			return true;
 		}
 		else if (operatorCount > 0) {
 			bool insert = false;
@@ -137,17 +141,8 @@ public:
 				operatorCount--;
 				equalCount--;
 			}
+			return true;
 		}
-		//a = b + c 2 2=>1
-		//b + c 1 2=>0
-		/*
-		if (input) {
-			map[mid].AddInput(node->variableName);
-		}
-		else {
-			map[mid].AddOutput(node->variableName);
-		}
-		*/
 		return true;
 	}
 
@@ -180,21 +175,34 @@ public:
 
 	void Draw() {
 		int size = getDebugSize();
-		for (int i = index; i < size; i++) {
-			//printfDx("%d : ", i);
-			printfDx(map[i].DrawNode().c_str());
-		}
-		printfDx("\n");
-		
-		/*
-		for (int i = 0; i < variableName.size(); ++i) {
-			printfDx("%s ", variableType[i].c_str());
-			printfDx("%s => [", variableName[i].c_str());
-			for (int j = 0; j < variableRelation[i].size(); j++) {
-				printfDx("%d, ", variableRelation[i][j]);
+		if (debug) {
+			for (int i = index; i < size; i++) {
+				//printfDx("%d : ", i);
+				printfDx(map[i].DrawNode().c_str());
 			}
-			printfDx("]\n");
+			printfDx("\n");
+
+			/*
+			for (int i = 0; i < variableName.size(); ++i) {
+				printfDx("%s ", variableType[i].c_str());
+				printfDx("%s => [", variableName[i].c_str());
+				for (int j = 0; j < variableRelation[i].size(); j++) {
+					printfDx("%d, ", variableRelation[i][j]);
+				}
+				printfDx("]\n");
+			}
+			*/
 		}
-		*/
+		else {
+			Arrow arrow;
+			arrow.SetState(100, 100, 100, 300, "test");
+			arrow.Draw();
+			Arrow arrow2;
+			arrow2.SetState(100, 100, 300, 300, "test2");
+			arrow2.Draw();
+			Arrow arrow3;
+			arrow3.SetState(100, 100, 300, 100, "test3");
+			arrow3.Draw();
+		}
 	}
 };
