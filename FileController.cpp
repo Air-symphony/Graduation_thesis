@@ -19,7 +19,7 @@ private:
 		return ifs.is_open();
 	}
 public:
-	static char log[1000];
+	static char log[USHRT_MAX];
 
 	static bool init() {
 		SetFilePath("TestCode\\Sample.cpp");
@@ -33,8 +33,8 @@ public:
 		//ディレクトリ作成
 		CreateDirectory(tempDirName, NULL);
 
-		char cdir[255];
-		GetCurrentDirectory(255, cdir);
+		char cdir[MAX_PATH];
+		GetCurrentDirectory(MAX_PATH, cdir);
 		strcpy_s(currentDirctory, cdir);
 		CreateTemporaryFile();
 		return 1;
@@ -50,39 +50,105 @@ public:
 
 	static bool PrintFile(HWND textbox) {
 		SetWindowText(textbox, "");
-		int fileHandle = FileRead_open(filepath);
 
-		if(fileHandle == 0) {
+		FILE *fp;
+		int err_no = fopen_s(&fp, filepath, "r");
+		if (err_no != 0) {
+			fclose(fp);
+			strcpy_s(log, "Can't print.\n");
+			strcat_s(log, filepath);
 			return false;
 		}
-
-		int fileLength = (int)(FileRead_size(filepath) * 2);
-
-		char* text = (char*)malloc(fileLength);
+		//DWORD size = GetFileSize(fp, NULL);
+		int filesize = (int)FileRead_size(filepath);
+		char* text = (char*)malloc(filesize * 2);
 		*text = '\0';
 
-		while (FileRead_eof(fileHandle) == 0) {
-			char string[100];
-			FileRead_gets(string, 100, fileHandle);
+		char buf[USHRT_MAX] = "";
+		while (fgets(buf, filesize, fp) != NULL) {
+			std::string destStr = "\0";
 
-			strcat_s(text, fileLength, string);
-			strcat_s(text, fileLength, "\r\n");
+			const char CR = '\r';
+			const char LF = '\n';
+			const char* CRLF = "\r\n";
+			int count = 0;
+			for (auto it : std::string(buf)) {
+				if (it != CR && it != LF) {
+					destStr += it;
+					count = 0;
+				}
+				else if (count == 0) {
+					if (it == CR || it == LF) {
+						destStr += CRLF;
+						count = 1;
+					}
+				}
+			}
+			strcat_s(text, filesize * 2, destStr.c_str());
 		}
-		SetWindowText(textbox, text);
-		free(text);
-
-		FileRead_close(fileHandle);
+		fclose(fp);
+		if (strlen(text) > 0) {
+			SetWindowText(textbox, text);
+			free(text);
+		}
 		return true;
 	}
 
-	static bool SaveFile(){
+	static bool SaveTempFile(HWND textbox) {
+		/*
+		char* text = (char*)malloc(USHRT_MAX);
+		*text = '\0';
+		GetWindowText(textbox, text, USHRT_MAX);
 		FILE *fp;
-		int err_no = fopen_s(&fp, filepath, "w");
+		int err_no = fopen_s(&fp, tempFilePath, "w");
 		if (err_no != 0) return false;
-    
-		//fprintf(fp, "%f\n", "");
+
+		fprintf(fp, text);
 
 		fclose(fp);
+		free(text);
+		*/
+		return true;
+	}
+
+	static bool SaveFile(HWND textbox) {
+		FILE *fp;
+		int err_no = fopen_s(&fp, filepath, "w");
+		if (err_no != 0) {
+			fclose(fp);
+			strcpy_s(log, "Can't save.\n");
+			strcat_s(log, filepath);
+			return false;
+		}
+
+		char* text = (char*)malloc(USHRT_MAX);
+		*text = '\0';
+		GetWindowText(textbox, text, USHRT_MAX);
+
+		const char CR = '\r', LF = '\n';
+		int count = 0;
+		std::string destStr = "\0";
+		for (auto it : std::string(text)) {
+			if (it != CR && it != LF) {
+				destStr += it;
+				count = 0;
+			}
+			else if (count == 0) {
+				if (it == CR || it == LF) {
+					destStr += LF;
+					count = 1;
+				}
+			}
+		}
+		strcpy_s(text, USHRT_MAX, destStr.c_str());
+		if (strlen(text) > 0) {
+			fprintf(fp, text);
+			free(text);
+		}
+		fclose(fp);
+
+		strcpy_s(log, "Complete to save.\n");
+		strcat_s(log, filepath);
 		return true;
 	}
 	
@@ -117,7 +183,7 @@ public:
 		return 1;
 	}
 
-	static bool RemoveTemporaryFiles() {
+	static int RemoveTemporaryFiles() {
 		DeleteFile(tempFilePath);
 		return RemoveDirectory(tempDirName);
 	}

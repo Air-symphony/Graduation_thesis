@@ -29,7 +29,7 @@ HWND texthwnd;
 
 char FileController::filepath[MAX_PATH] = "";
 char FileController::currentDirctory[MAX_PATH] = "";
-char FileController::log[1000] = "";
+char FileController::log[USHRT_MAX] = "";
 char FileController::tempDirName[7] = "";
 char FileController::tempFileName[15] = "";
 char FileController::tempFilePath[7 + 15] = "";
@@ -133,10 +133,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     {
 		clsDx();
 		ClearDrawScreen();
-		PrintAST(FileController::GetFilepath());
+		//PrintAST(FileController::GetFilepath());
 		FpsTimeFanction();
 		//デバッグ
-		DrawString(0, 650, FileController::log, GetColor(255,255,255),TRUE);
+		DrawString(20, 500, FileController::log, GetColor(255,255,255),TRUE);
 		ScreenFlip();//常に表示させるため
         if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
         {
@@ -242,20 +242,25 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				ofn.Flags = OFN_FILEMUSTEXIST | OFN_OVERWRITEPROMPT;
 				switch (wmId) {
 					case IDM_FILEOPEN:
-						GetOpenFileName(&ofn);
-						FileController::SetFilePath(ofn.lpstrFile);
-						FileController::CreateTemporaryFile();
-						FileController::PrintFile(texthwnd);
+						if (GetOpenFileName(&ofn)) {
+							FileController::SetFilePath(ofn.lpstrFile);
+							FileController::CreateTemporaryFile();
+							FileController::PrintFile(texthwnd);
+						}
 						break;
 					case IDM_FILESAVE:
-						GetSaveFileName(&ofn);
+						if (GetSaveFileName(&ofn)) {
+							//FileController::SaveFile(texthwnd);
+						}
 						break;
 					default:
 						return 0;
 				}
 				//MessageBox(0, strFile, _TEXT("選択されたファイル名"), MB_OK);
 				break;
-			
+			case IDM_FILEUPDATE:
+				FileController::SaveFile(texthwnd);
+				break;
             case IDM_EXIT:
 				FileController::RemoveTemporaryFiles();
                 DestroyWindow(hWnd);
