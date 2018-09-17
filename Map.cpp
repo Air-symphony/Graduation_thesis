@@ -175,13 +175,13 @@ public:
 
 	void Draw() {
 		int size = getDebugSize();
-		if (debug) {
+		if (!debug) {
 			for (int i = index; i < size; i++) {
 				//printfDx("%d : ", i);
 				printfDx(map[i].DrawNode().c_str());
 			}
 			printfDx("\n");
-
+			
 			/*
 			for (int i = 0; i < variableName.size(); ++i) {
 				printfDx("%s ", variableType[i].c_str());

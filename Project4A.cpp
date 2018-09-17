@@ -82,9 +82,9 @@ void FpsTimeFanction() {
 	else {
 		FpsTime_i++;//現在何周目かカウント
 	}
-	DrawFormatString(400, 10, GetColor(255, 255, 255), "FpsTime_i[%d]", FpsTime_i); //fpsを表示
+	DrawFormatString(450, 680, GetColor(255, 255, 255), "FpsTime_i[%d]", FpsTime_i); //fpsを表示
 	if (Fps != 0)
-		DrawFormatString(530, 10, GetColor(255, 255, 255), "FPS[%.1f]", Fps); //fpsを表示
+		DrawFormatString(580, 680, GetColor(255, 255, 255), "FPS[%.1f]", Fps); //fpsを表示
 	return;
 }
 // 子ウインドウのプロージャ
@@ -133,10 +133,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     {
 		clsDx();
 		ClearDrawScreen();
-		//PrintAST(FileController::GetFilepath());
+		PrintAST(FileController::GetFilepath());
 		FpsTimeFanction();
 		//デバッグ
-		DrawString(20, 500, FileController::log, GetColor(255,255,255),TRUE);
+		DrawString(20, 600, FileController::log, GetColor(255,255,255),TRUE);
 		ScreenFlip();//常に表示させるため
         if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
         {

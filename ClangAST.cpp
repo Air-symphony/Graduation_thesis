@@ -52,7 +52,7 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 
 	string codeStr = GetCode(cursor);
 
-	if (kind != CXCursorKind::CXCursor_CXXMethod &&
+	if (//kind != CXCursorKind::CXCursor_CXXMethod &&
 		kind != CXCursorKind::CXCursor_CompoundStmt &&
 		kind != CXCursorKind::CXCursor_DeclStmt) 
 	{	
@@ -60,7 +60,8 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 			kind == CXCursorKind::CXCursor_CXXAccessSpecifier ||
 			kind == CXCursorKind::CXCursor_ForStmt ||
 			kind == CXCursorKind::CXCursor_WhileStmt ||
-			kind == CXCursorKind::CXCursor_IfStmt)
+			kind == CXCursorKind::CXCursor_IfStmt || 
+			kind == CXCursorKind::CXCursor_CXXMethod)
 		{
 			codeStr = "";
 		}
@@ -75,7 +76,8 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 			map.mid = map.id;
 			map.mstate = node.state;
 		}
-		else if (kind == CXCursorKind::CXCursor_VarDecl || 
+		else if (kind == CXCursorKind::CXCursor_VarDecl ||
+			kind == CXCursorKind::CXCursor_FieldDecl ||
 			kind == CXCursorKind::CXCursor_ReturnStmt)
 		{
 			node.AddOutput(variableName);
@@ -168,53 +170,41 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 	return CXChildVisit_Recurse;
 }
 
-int i = 0;
 int PrintAST(char* _filepath) 
 {
-	/*構文エラーを表示*/
-	/*
-	CXIndex Index = clang_createIndex(1, 1);
-	CXTranslationUnit TU = clang_parseTranslationUnit(Index,
-		_filepath, nullptr, 0,
-		nullptr, 0, CXTranslationUnit_None);
-	if (TU == nullptr)
-	{
-		printfDx("ERROR : [%s] not found.", _filepath);
-		return 0;
-	}
-	printfDx("path\n");
-	for (unsigned I = 0, N = clang_getNumDiagnostics(TU); I != N; ++I) {
-		CXDiagnostic Diag = clang_getDiagnostic(TU, I);
-		CXString String = clang_formatDiagnostic(Diag,
-			clang_defaultDiagnosticDisplayOptions());
-		printfDx("%d : %s\n", I, clang_getCString(String));
-		//fprintf(stderr, "%s\n", clang_getCString(String));
-		clang_disposeString(String);
-	}
-	printfDx("path2\n");
-	clang_disposeTranslationUnit(TU);
-	clang_disposeIndex(Index);
-	return 1;
-
-	*/
-	
 	CXIndex index = clang_createIndex(1, 1);
 	CXTranslationUnit unit = clang_parseTranslationUnit(
 		index,
 		_filepath, nullptr, 0,
 		nullptr, 0,
 		CXTranslationUnit_None);
+
 	if (unit == nullptr)
 	{
 		printfDx("ERROR : [%s] not found.", _filepath);
-		//exit(-1);
-		return 0;
+		return -1;
 	}
 	file = clang_getFile(unit, _filepath);
 	CXString str = clang_getFileName(file);
 	printfDx("filename[%s]\n", clang_getCString(str));
 	clang_disposeString(str);
 
+	/*構文エラーを表示*/
+	bool error = false;
+	for (unsigned I = 0, N = clang_getNumDiagnostics(unit); I != N; ++I) {
+		CXDiagnostic Diag = clang_getDiagnostic(unit, I);
+		CXString String = clang_formatDiagnostic(Diag,
+			clang_defaultDiagnosticDisplayOptions());
+		printfDx("・%d : %s\n", I, clang_getCString(String));
+		clang_disposeString(String);
+		error = true;
+	}
+	if (error) {
+		clang_disposeTranslationUnit(unit);
+		clang_disposeIndex(index);
+		return -1;
+	}
+	/*ノードの表示*/
 	map.init();
 	clang_visitChildren(clang_getTranslationUnitCursor(unit),
 		visitChildrenCallback,
