@@ -74,18 +74,12 @@ public:
 		str += "[" + text + "]";
 
 		str += "[";
-		for (int i = 0; i < input.size(); i++) {
-			str += input[i] + ",";
-		}
-		if (input.size() > 0) {
-			//str.pop_back();
-		}
-		str += "=> ";
 		for (int i = 0; i < output.size(); i++) {
 			str += output[i] + ",";
 		}
-		if (output.size() > 0) {
-			//str.pop_back();
+		str += "<= ";
+		for (int i = 0; i < input.size(); i++) {
+			str += input[i] + ",";
 		}
 		str += "]";
 

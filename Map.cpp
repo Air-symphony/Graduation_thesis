@@ -2,6 +2,10 @@
 #include "Arrow.cpp"
 #include "Node.cpp"
 
+#define INPUT 1
+#define OUTPUT 2
+#define INOUTPUT 3
+
 class Map {
 private:
 	/*Nodeのまとめ*/
@@ -49,13 +53,11 @@ public:
 	int id = 0;
 	OffsetList scopeOffset;
 	OffsetList exprOffset;
-	int mid, mstate;
-	int equalCount, operatorCount;
-	bool unaryFlag;
-	bool comparisonFlag;
+	int preId, preState;
+	bool inoutputFlag, inputFlag, outputFlag;
 	bool assignmentFlag;
-	bool callFlag;
-	bool binaryLock, varLock, varFlag;
+	int equalCount, operatorCount;
+	bool binaryLock, DeclLock;
 
 	Map() {
 		init();
@@ -63,10 +65,10 @@ public:
 
 	void init() {
 		id = 0;
-		mid = mstate = -1;
+		preId = preState = -1;
 		equalCount = operatorCount = 0;
-		unaryFlag = comparisonFlag = assignmentFlag = callFlag = false;
-		binaryLock = varLock = varFlag = false;
+		outputFlag = inoutputFlag = inputFlag = assignmentFlag = false;
+		binaryLock = DeclLock = false;
 		int i = 0;
 		for (i = (int)map.size(); i > 0; i--) {
 			map.pop_back();
@@ -81,11 +83,12 @@ public:
 		exprOffset.init();
 	}
 
+	/*for{}、if{}などのインデントの深さ*/
 	void CheckScope(Node *node) {
 		int scope = scopeOffset.CheckOffset(node->offset);
 		node->addScope(scope);
 	}
-
+	/*コードに対する詳細の深さ*/
 	void CheckExpression(Node *node) {
 		int state = exprOffset.CheckOffset(node->offset);
 		node->addState(state);
@@ -95,53 +98,67 @@ public:
 		map.push_back(node);
 		id++;
 	}
-
+	/*今から作業するコードが、以前のノードに内包されていなければ、全てのフラグを解除*/
 	bool OpenLock(Node node) {
-		if (node.state <= mstate) {
-			mstate = -1;
-			binaryLock = varLock = unaryFlag = callFlag = 
-				varFlag = comparisonFlag = assignmentFlag = false;
+		if (node.state <= preState) {
+			preState = -1;
+			binaryLock = DeclLock = inoutputFlag = inputFlag = 
+				outputFlag = assignmentFlag = false;
 			return true;
 		}
 		return false;
 	}
-
-	bool SetNodeAbility(Node *node, bool input = true) {
-		if (mid == id || mstate < 0) return false;
+	/*
+	preId = id;
+	preState = state;
+	*/
+	void Save_id_state(int state) {
+		preId = id;
+		preState = state;
+	}
+	/*
+	command = INPUT, OUTPUT, INOUTPUT*/
+	bool AddInOut_PreNode(Node node, int command) {
+		if (command == INPUT) {
+			return map[preId].AddInput(node.variableName);
+		}
+		else if(command == OUTPUT) {
+			return map[preId].AddOutput(node.variableName);
+		}
+		else if (command == INOUTPUT) {
+			return (map[preId].AddInput(node.variableName) &&
+				map[preId].AddOutput(node.variableName));
+		}
+		return false;
+	}
+	/*各ノードに入出力される変数を指定
+	指定できたということは、そのノードは表示する必要がない*/
+	bool SetNodeAbility(Node node, bool input = true) {
+		if (preId == id || preState < 0) return false;
 
 		/*自分より下の情報の場合*/
-		if (varFlag) {
-			map[mid].AddInput(node->variableName);
-			return true;
+		if (inoutputFlag) {
+			AddInOut_PreNode(node, INOUTPUT);
 		}
-		else if (unaryFlag) {
-			map[mid].AddInput(node->variableName);
-			map[mid].AddOutput(node->variableName);
-			//unaryFlag = false;
-			return true;
+		else if (outputFlag) {
+			AddInOut_PreNode(node, OUTPUT);
 		}
-		else if (comparisonFlag) {
-			map[mid].AddInput(node->variableName);
-			return true;
-		}
-		else if (callFlag) {
-			map[mid].AddInput(node->variableName);
-			return true;
+		else if (inputFlag) {
+			AddInOut_PreNode(node, INPUT);
 		}
 		else if (operatorCount > 0) {
 			bool insert = false;
 			if (assignmentFlag) {
-				insert = map[mid].AddOutput(node->variableName);
-				assignmentFlag = (equalCount > 1);
+				insert = AddInOut_PreNode(node, OUTPUT);
 			}
 			else {
-				insert = map[mid].AddInput(node->variableName);
+				insert = AddInOut_PreNode(node, INPUT);
 			}
 			if (insert) {
-				operatorCount--;
 				equalCount--;
+				assignmentFlag = (equalCount > 0);
+				operatorCount--;
 			}
-			return true;
 		}
 		return true;
 	}
