@@ -53,14 +53,14 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 	string codeStr = GetCode(cursor);
 
 	if (kind != CXCursorKind::CXCursor_CompoundStmt &&
-		kind != CXCursorKind::CXCursor_DeclStmt) 
-	{	
+		kind != CXCursorKind::CXCursor_DeclStmt)
+	{
 		if (kind == CXCursorKind::CXCursor_ClassDecl ||
 			kind == CXCursorKind::CXCursor_CXXAccessSpecifier ||
 			kind == CXCursorKind::CXCursor_ForStmt ||
 			kind == CXCursorKind::CXCursor_WhileStmt ||
-			kind == CXCursorKind::CXCursor_IfStmt || 
-			kind == CXCursorKind::CXCursor_FunctionDecl || 
+			kind == CXCursorKind::CXCursor_IfStmt ||
+			kind == CXCursorKind::CXCursor_FunctionDecl ||
 			kind == CXCursorKind::CXCursor_CXXMethod)
 		{
 			codeStr = "";
@@ -100,7 +100,13 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 		/*i+=a‚È‚Ç*/
 		else if (kind == CXCursorKind::CXCursor_CompoundAssignOperator) {
 			map.Save_id_state(node.state);
-			map.DeclLock = true;
+			map.DeclLock = map.inputFlag = map.compoundAssignFlag = true;
+		}
+		/*i+=a‚ÌÚ×‚È‚Ç*/
+		else if (kind == CXCursorKind::CXCursor_MemberRefExpr &&
+			map.compoundAssignFlag) {
+			map.AddInOut_PreNode(node, INOUTPUT);
+			map.compoundAssignFlag = false;
 		}
 		/*ŠÖ”ŒÄ‚Ño‚µ*/
 		else if (kind == CXCursorKind::CXCursor_CallExpr) {
@@ -145,15 +151,17 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 				map.equalCount = equalCount;
 				map.operatorCount = operatorCount + equalCount + 1;
 				map.assignmentFlag = (equalCount > 0);
-				if (!map.assignmentFlag) {
-					//map.operatorCount += 1;//a + b [2=>0]
-				}
 			}
 		}
 
-		if (!map.SetNodeAbility(node)) //{}
+		if (!map.debug) {
+			map.SetNodeAbility(node);
 			map.AddMap(node);
-
+		}
+		else {
+			if (!map.SetNodeAbility(node))
+				map.AddMap(node);
+		}
 		//node.AddOutput(variableName);
 
 	

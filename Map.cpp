@@ -15,9 +15,6 @@ private:
 	vector<string> variableName;
 	vector<vector<int>> variableRelation;
 	/*Debug*/
-	int index = 0; bool debug = false;
-	int count = 0;
-	/*Debug*/
 	int getDebugSize(){
 		int range = 25;
 		if (CheckHitKey(KEY_INPUT_UP) != 0) {
@@ -50,12 +47,16 @@ private:
 		return size;
 	}
 public:
+	/*Debug*/
+	int index = 0; bool debug = false;
+	int count = 0;
+
 	int id = 0;
 	OffsetList scopeOffset;
 	OffsetList exprOffset;
 	int preId, preState;
 	bool inoutputFlag, inputFlag, outputFlag;
-	bool assignmentFlag;
+	bool assignmentFlag, compoundAssignFlag;
 	int equalCount, operatorCount;
 	bool binaryLock, DeclLock;
 
@@ -67,7 +68,7 @@ public:
 		id = 0;
 		preId = preState = -1;
 		equalCount = operatorCount = 0;
-		outputFlag = inoutputFlag = inputFlag = assignmentFlag = false;
+		outputFlag = inoutputFlag = inputFlag = assignmentFlag = compoundAssignFlag = false;
 		binaryLock = DeclLock = false;
 		int i = 0;
 		for (i = (int)map.size(); i > 0; i--) {
@@ -192,7 +193,7 @@ public:
 
 	void Draw() {
 		int size = getDebugSize();
-		if (!debug) {
+		//if (!debug) {
 			for (int i = index; i < size; i++) {
 				//printfDx("%d : ", i);
 				printfDx(map[i].DrawNode().c_str());
@@ -209,6 +210,7 @@ public:
 				printfDx("]\n");
 			}
 			*/
+		/*
 		}
 		else {
 			Arrow arrow;
@@ -221,5 +223,6 @@ public:
 			arrow3.SetState(100, 100, 300, 100, "test3");
 			arrow3.Draw();
 		}
+		*/
 	}
 };
