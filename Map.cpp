@@ -54,9 +54,9 @@ public:
 	int id = 0;
 	OffsetList scopeOffset;
 	OffsetList exprOffset;
-	int preId, preState;
+	int preId, preScope, preState;
 	bool inoutputFlag, inputFlag, outputFlag;
-	bool assignmentFlag, compoundAssignFlag;
+	bool assignmentFlag, compoundAssignFlag, ifstmtFlag;
 	int equalCount, operatorCount;
 	bool binaryLock, DeclLock;
 
@@ -66,9 +66,9 @@ public:
 
 	void init() {
 		id = 0;
-		preId = preState = -1;
+		preId = preState = preScope = -1;
 		equalCount = operatorCount = 0;
-		outputFlag = inoutputFlag = inputFlag = assignmentFlag = compoundAssignFlag = false;
+		outputFlag = inoutputFlag = inputFlag = assignmentFlag = compoundAssignFlag = ifstmtFlag = false;
 		binaryLock = DeclLock = false;
 		int i = 0;
 		for (i = (int)map.size(); i > 0; i--) {
@@ -85,8 +85,8 @@ public:
 	}
 
 	/*for{}、if{}などのインデントの深さ*/
-	void CheckScope(Node *node) {
-		int scope = scopeOffset.CheckOffset(node->offset);
+	void CheckScope(Node *node, bool ifstmt = false) {
+		int scope = scopeOffset.CheckOffset(node->offset, ifstmt);
 		node->addScope(scope);
 	}
 	/*コードに対する詳細の深さ*/
@@ -101,10 +101,11 @@ public:
 	}
 	/*今から作業するコードが、以前のノードに内包されていなければ、全てのフラグを解除*/
 	bool OpenLock(Node node) {
-		if (node.state <= preState) {
+		if (node.scope <= preScope && 
+			node.state <= preState) {
 			preState = -1;
 			binaryLock = DeclLock = inoutputFlag = inputFlag = 
-				outputFlag = assignmentFlag = false;
+				outputFlag = assignmentFlag = ifstmtFlag = false;
 			return true;
 		}
 		return false;
@@ -112,10 +113,12 @@ public:
 	/*
 	preId = id;
 	preState = state;
+	preScope = scope;
 	*/
-	void Save_id_state(int state) {
+	void Save_id_state_scope(int state, int scope) {
 		preId = id;
 		preState = state;
+		preScope = scope;
 	}
 	/*
 	command = INPUT, OUTPUT, INOUTPUT*/
@@ -132,6 +135,12 @@ public:
 		}
 		return false;
 	}
+
+	bool SetText_PreNode(Node node) {
+		map[preId].text = node.text;
+		return true;
+	}
+
 	/*各ノードに入出力される変数を指定
 	指定できたということは、そのノードは表示する必要がない*/
 	bool SetNodeAbility(Node node, bool input = true) {

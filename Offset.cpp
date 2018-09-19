@@ -43,17 +43,25 @@ public:
 		list.push_back(offset);
 	}
 
-	int CheckOffset(Offset offset) {
-		return CheckOffset(offset.begin, offset.end);
+	int CheckOffset(Offset offset, bool ifstmt = false) {
+		return CheckOffset(offset.begin, offset.end, ifstmt);
 	}
 
-	int CheckOffset(int begin, int end) {
+	int CheckOffset(int begin, int end, bool ifstmt = false) {
 		int count = 0;
 		for (int i = (int)list.size() - 1; i >= 0; i--) {
 			if (list[i].begin <= begin &&
 				end <= list[i].end) {
-				count++;
+				//if(){}else if(){}‚ğ•À—ñ‚³‚¹‚é‚½‚ß
+				if (ifstmt && end == list[i].end) {
+					list.pop_back();
+				}
+				//scope“à
+				else {
+					count++;
+				}
 			}
+			else
 			if (list[i].end < begin) {
 				list.pop_back();
 			}

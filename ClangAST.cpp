@@ -52,14 +52,15 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 
 	string codeStr = GetCode(cursor);
 
-	if (kind != CXCursorKind::CXCursor_CompoundStmt &&
-		kind != CXCursorKind::CXCursor_DeclStmt)
+	if (true)
+		//kind != CXCursorKind::CXCursor_DeclStmt)
 	{
-		if (kind == CXCursorKind::CXCursor_ClassDecl ||
+		if (kind == CXCursorKind::CXCursor_CompoundStmt || 
+			kind == CXCursorKind::CXCursor_ClassDecl ||
 			kind == CXCursorKind::CXCursor_CXXAccessSpecifier ||
 			kind == CXCursorKind::CXCursor_ForStmt ||
 			kind == CXCursorKind::CXCursor_WhileStmt ||
-			kind == CXCursorKind::CXCursor_IfStmt ||
+			//kind == CXCursorKind::CXCursor_IfStmt ||
 			kind == CXCursorKind::CXCursor_FunctionDecl ||
 			kind == CXCursorKind::CXCursor_CXXMethod)
 		{
@@ -67,21 +68,27 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 		}
 		Node node(map.id, nameRange.begin_int_data, nameRange.end_int_data, clangVariableType, codeStr, variableName);
 
-		map.CheckScope(&node);
+		bool ifstmt = kind == CXCursorKind::CXCursor_IfStmt;
+		map.CheckScope(&node, ifstmt);
 		map.CheckExpression(&node);
 		map.OpenLock(node);
+		/*if(),else if()などの条件式の回収*/
+		if (map.ifstmtFlag) {
+			map.SetText_PreNode(node);
+			map.ifstmtFlag = false;
+		}
 		/*変数,メンバ変数宣言*/
-		if (kind == CXCursorKind::CXCursor_VarDecl ||
+		else if (kind == CXCursorKind::CXCursor_VarDecl ||
 			kind == CXCursorKind::CXCursor_FieldDecl)
 		{
 			node.AddOutput(variableName);
-			map.Save_id_state(node.state);
+			map.Save_id_state_scope(node.state, node.scope);
 			map.DeclLock = true;
 		}
 		/*関数,メンバ関数宣言*/
 		else if (kind == CXCursorKind::CXCursor_FunctionDecl ||
 			kind == CXCursorKind::CXCursor_CXXMethod) {
-			map.Save_id_state(node.state);
+			map.Save_id_state_scope(node.state, node.scope);
 		}
 		/*関数の引数宣言*/
 		else if (kind == CXCursorKind::CXCursor_ParmDecl) {
@@ -89,17 +96,17 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 		}
 		/*return文*/
 		else if (kind == CXCursorKind::CXCursor_ReturnStmt) {
-			map.Save_id_state(node.state);
+			map.Save_id_state_scope(node.state, node.scope);
 			map.DeclLock = map.inoutputFlag = true;
 		}
 		/*i++など*/
 		else if (kind == CXCursorKind::CXCursor_UnaryOperator) {
-			map.Save_id_state(node.state);
+			map.Save_id_state_scope(node.state, node.scope);
 			map.inoutputFlag = true;
 		}
 		/*i+=aなど*/
 		else if (kind == CXCursorKind::CXCursor_CompoundAssignOperator) {
-			map.Save_id_state(node.state);
+			map.Save_id_state_scope(node.state, node.scope);
 			map.DeclLock = map.inputFlag = map.compoundAssignFlag = true;
 		}
 		/*i+=aの詳細など*/
@@ -111,7 +118,7 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 		/*関数呼び出し*/
 		else if (kind == CXCursorKind::CXCursor_CallExpr) {
 			if (!map.DeclLock && !map.binaryLock) {
-				map.Save_id_state(node.state);
+				map.Save_id_state_scope(node.state, node.scope);
 			}
 			map.inputFlag = true;
 		}
@@ -124,14 +131,14 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 				(codeStr.find("==") != std::string::npos)
 				) {
 				if (!map.DeclLock) {
-					map.Save_id_state(node.state);
+					map.Save_id_state_scope(node.state, node.scope);
 				}
 				map.inputFlag = true;
 			}
 			//a = b = c, a = b + cのなどの検知
 			else if(!map.binaryLock) {
 				if (!map.DeclLock) {
-					map.Save_id_state(node.state);
+					map.Save_id_state_scope(node.state, node.scope);
 				}
 				map.binaryLock = true;
 				int equalCount = 0, operatorCount = 0;
@@ -153,6 +160,10 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 				map.assignmentFlag = (equalCount > 0);
 			}
 		}
+		else if (kind == CXCursorKind::CXCursor_IfStmt) {
+			map.Save_id_state_scope(node.state, node.scope);
+			map.DeclLock = map.ifstmtFlag = true;
+		}
 
 		if (!map.debug) {
 			map.SetNodeAbility(node);
@@ -162,11 +173,12 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 			if (!map.SetNodeAbility(node))
 				map.AddMap(node);
 		}
-		//node.AddOutput(variableName);
-
 	
 		/*一番上の階層のみを表示*/
-		if (kind == CXCursorKind::CXCursor_ForStmt ||
+		if (kind == CXCursorKind::CXCursor_ClassDecl || 
+			kind == CXCursorKind::CXCursor_FunctionDecl ||
+			kind == CXCursorKind::CXCursor_CXXMethod || 
+			kind == CXCursorKind::CXCursor_ForStmt ||
 			kind == CXCursorKind::CXCursor_WhileStmt || 
 			kind == CXCursorKind::CXCursor_IfStmt)
 		{

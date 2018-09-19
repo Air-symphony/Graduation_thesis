@@ -10,10 +10,11 @@ private:
 	int x, y;
 	int id;
 	string type;
-	string text;
 	vector<string> output;
 	vector<string> input;
+	vector<Node*> block;
 public:
+	string text;
 	Offset offset;
 	int scope, state;
 	string variableName;
@@ -59,6 +60,11 @@ public:
 		return false;
 	}
 
+	bool AddNode(Node* node) {
+		block.push_back(node);
+		return true;
+	}
+
 	string DrawNode() {
 		string str = "";
 		//str += "(" + to_string(scope) + "," + to_string(state) + ") ";
@@ -68,7 +74,7 @@ public:
 		for (int i = 0; i < state; i++) {
 			str += ">";
 		}
-		str += to_string(id) + " : ";// (" + to_string(offset.begin) + " - " + to_string(offset.end) + ")";
+		str += to_string(id) + " : " + "(" + to_string(offset.begin) + " - " + to_string(offset.end) + ")";
 		str += variableName + " ";
 		str += "<" + type + ">";
 		str += "[" + text + "]";
