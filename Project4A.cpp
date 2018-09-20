@@ -82,9 +82,9 @@ void FpsTimeFanction() {
 	else {
 		FpsTime_i++;//現在何周目かカウント
 	}
-	DrawFormatString(450, 680, GetColor(255, 255, 255), "FpsTime_i[%d]", FpsTime_i); //fpsを表示
+	DrawFormatString(500, 10, GetColor(255, 255, 255), "FpsTime_i[%d]", FpsTime_i); //fpsを表示
 	if (Fps != 0)
-		DrawFormatString(580, 680, GetColor(255, 255, 255), "FPS[%.1f]", Fps); //fpsを表示
+		DrawFormatString(630, 10, GetColor(255, 255, 255), "FPS[%.1f]", Fps); //fpsを表示
 	return;
 }
 // 子ウインドウのプロージャ
@@ -125,7 +125,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	FileController::init();
 	FileController::PrintFile(texthwnd);
 
-	PrintAST(FileController::GetFilepath());
+	ParsingNode(FileController::GetFilepath());
 	ScreenFlip();
 	FpsTime_i = 0;
     // メイン メッセージ ループ:
@@ -133,10 +133,17 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     {
 		clsDx();
 		ClearDrawScreen();
-		PrintAST(FileController::GetFilepath());
-		FpsTimeFanction();
 		//デバッグ
-		DrawString(20, 600, FileController::log, GetColor(255,255,255),TRUE);
+		FpsTimeFanction();
+		int Width, Height;
+		GetWindowSize(&Width, &Height);
+		printfDx("window size[%d, %d]\n", Width, Height);
+
+		//ParsingNode(FileController::GetFilepath());
+		if (!PrintMap()) {
+			printfDx("Error. Can't PrintMap");
+		}
+		//DrawString(20, 600, FileController::log, GetColor(255,255,255),TRUE);
 		ScreenFlip();//常に表示させるため
         if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
         {
@@ -246,6 +253,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 							FileController::SetFilePath(ofn.lpstrFile);
 							FileController::CreateTemporaryFile();
 							FileController::PrintFile(texthwnd);
+							ParsingNode(FileController::GetFilepath());
 						}
 						break;
 					case IDM_FILESAVE:
@@ -260,6 +268,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				break;
 			case IDM_FILEUPDATE:
 				FileController::SaveFile(texthwnd);
+				ParsingNode(FileController::GetFilepath());
 				break;
             case IDM_EXIT:
 				FileController::RemoveTemporaryFiles();

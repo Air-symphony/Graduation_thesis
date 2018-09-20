@@ -58,7 +58,7 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 	}
 	if (kind == CXCursorKind::CXCursor_CompoundStmt || 
 		kind == CXCursorKind::CXCursor_ClassDecl ||
-		kind == CXCursorKind::CXCursor_CXXAccessSpecifier ||
+		//kind == CXCursorKind::CXCursor_CXXAccessSpecifier ||
 		kind == CXCursorKind::CXCursor_ForStmt ||
 		kind == CXCursorKind::CXCursor_WhileStmt ||
 		//kind == CXCursorKind::CXCursor_IfStmt ||
@@ -168,14 +168,8 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 		map.DeclLock = map.ifstmtFlag = true;
 	}
 
-	if (!map.debug) {
-		map.SetNodeAbility(node);
+	if (!map.SetNodeAbility(node))//{}
 		map.AddMap(node);
-	}
-	else {
-		if (!map.SetNodeAbility(node))
-			map.AddMap(node);
-	}
 	
 	/*一番上の階層のみを表示*/
 	if (kind == CXCursorKind::CXCursor_ClassDecl || 
@@ -200,7 +194,8 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 	return CXChildVisit_Recurse;
 }
 
-int PrintAST(char* _filepath) 
+/*構文解析*/
+int ParsingNode(char* _filepath) 
 {
 	CXIndex index = clang_createIndex(1, 1);
 	CXTranslationUnit unit = clang_parseTranslationUnit(
@@ -234,38 +229,17 @@ int PrintAST(char* _filepath)
 		clang_disposeIndex(index);
 		return -1;
 	}
-	/*ノードの表示*/
 	map.init();
 	clang_visitChildren(clang_getTranslationUnitCursor(unit),
 		visitChildrenCallback,
 		NULL);
-	map.Draw();
+	//PrintMap();
 	clang_disposeTranslationUnit(unit);
 	clang_disposeIndex(index);
 	return 1;
 }
 
-/*
-・Decl : Declare, 宣言
-FunctionDecl : 関数宣言
-ParamVarDecl : 関数の引数の宣言
-VarDecl : 変数の宣言
-・Stmt : Statement, 文
-CompoundStmt : ブロック文
-DeclStmt : 変数の宣言文(VarDeclから成る)
-ForStmt : For文
-IfStmt : If文
-ReturnStmt : Return文
-・Expr : Expression, 式
-CStyleCastExpr : キャスト式
-ImplicitCastExpr : 暗黙キャスト式
-CallExpr : 関数呼び出し式
-DeclRefExpr : 変数呼び出し式
-BinaryOperation : 二項演算子
-UnaryOperation : 単項演算子
-ArraySubscriptExpr : 配列表現のための式
-MemberExpr : 構造体などのメンバを指す式
-・Literal : リテラル
-IntegerLiteral : 整数
-StringLiteral : 文字列
-*/
+/*マップの表示*/
+bool PrintMap() {
+	return map.Draw();
+}

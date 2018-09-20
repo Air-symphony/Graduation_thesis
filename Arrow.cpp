@@ -33,20 +33,21 @@ public:
 		double x = output_x - input_x;
 		double z = sqrt(y * y + x * x); 
 
-		double ratex = z / ((double)arrowBase.GetsizeX() * 2.0f);
+		double ratex = z / ((double)arrowBase.sizeX * 2.0f);
 		double angle = std::atan2(output_y - input_y, output_x - input_x);
 
 		//printfDx("arrowBase : %p\n", &arrowBase);
 		//printfDx("text : %p\n", &text);
 		DrawString(input_x + (int)(x / 2.0f), input_y + (int)(y / 2.0f) - 20,
 			text.c_str(), GetColor(255, 255, 255));
-
-		DrawRotaGraph3(input_x, input_y - arrowBase.GetsizeY(),
-			0, arrowBase.GetsizeY(), ratex, 1.0f,
+		/*
+		DrawRotaGraph3(input_x, input_y - arrowBase.sizeY,
+			0, arrowBase.sizeY, ratex, 1.0f,
 			angle, arrowBase.graphID, TRUE);
 		
 		DrawRotaGraph3(output_x, output_y,
-			0, arrowTip.GetsizeY(), 1.0f, 1.0f,
+			0, arrowTip.sizeY, 1.0f, 1.0f,
 			angle + PI, arrowTip.graphID, TRUE);
+			*/
 	}
 };

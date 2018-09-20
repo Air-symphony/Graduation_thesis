@@ -14,6 +14,20 @@ private:
 	vector<string> variableType;
 	vector<string> variableName;
 	vector<vector<int>> variableRelation;
+	/*Debugモード切替*/
+	bool ChangeDebugMode() {
+		if (CheckHitKey(KEY_INPUT_LEFT) != 0) {
+			count++;
+			if (count == 1) {
+				debug = !debug;
+				index = 0;
+			}
+		}
+		else {
+			count = 0;
+		}
+		return debug;
+	}
 	/*Debug*/
 	int getDebugSize(){
 		int range = 25;
@@ -27,15 +41,6 @@ private:
 				index++;
 			}
 		}
-		/*debugモード切替*/
-		if (CheckHitKey(KEY_INPUT_LEFT) != 0) {
-			count++;
-			if (count == 1)
-				debug = !debug;
-		}
-		else {
-			count = 0;
-		}
 		printfDx("[%d]\n", map.size());
 
 		int size = index + range;
@@ -48,8 +53,7 @@ private:
 	}
 public:
 	/*Debug*/
-	int index = 0; bool debug = false;
-	int count = 0;
+	int index = 0, count = 0; bool debug = false;
 
 	int id = 0;
 	OffsetList scopeOffset;
@@ -200,11 +204,14 @@ public:
 		return 0;
 	}
 
-	void Draw() {
-		int size = getDebugSize();
-		//if (!debug) {
+	/*マップの表示*/
+	bool Draw() {
+		if (map.size() <= 0) return false;
+
+		ChangeDebugMode();
+		if (debug) {
+			int size = getDebugSize();
 			for (int i = index; i < size; i++) {
-				//printfDx("%d : ", i);
 				printfDx(map[i].DrawNode().c_str());
 			}
 			printfDx("\n");
@@ -219,19 +226,32 @@ public:
 				printfDx("]\n");
 			}
 			*/
-		/*
 		}
 		else {
-			Arrow arrow;
-			arrow.SetState(100, 100, 100, 300, "test");
-			arrow.Draw();
-			Arrow arrow2;
-			arrow2.SetState(100, 100, 300, 300, "test2");
-			arrow2.Draw();
-			Arrow arrow3;
-			arrow3.SetState(100, 100, 300, 100, "test3");
-			arrow3.Draw();
+			Node::SetGraph();
+			MyDrawString myDraw(20);
+			int max = 0, y = map[0].GetHeight();
+			for (int i = 0; i < map.size();i++) {
+				int x = map[i].GetWidth(&myDraw);
+				map[i].DrawNode(&myDraw,
+					100 + x / 2,
+					50 + y / 2 + i * (y + 10) - index
+				);
+				max += y;
+			}
+
+			if (CheckHitKey(KEY_INPUT_UP) != 0) {
+				if (index > 0) {
+					index -= 10;
+				}
+			}
+			else if (CheckHitKey(KEY_INPUT_DOWN) != 0) {
+				if (index < max) {
+					index += 10;
+				}
+			}
+			printfDx("[%d]\n", index);
 		}
-		*/
+		return true;
 	}
 };

@@ -27,7 +27,11 @@ public:
 		type = _type;
 		text = _text;
 		variableName = _variableName;
-		nodeGraph.SetGraph(LoadGraph("picture\\node.png"));
+		nodeGraph.SetGraph(LoadGraph("picture\\Process.png"));
+	}
+
+	static void SetGraph() {
+		Node::nodeGraph.SetGraph(LoadGraph("picture\\Process.png"));
 	}
 
 	void addScope(int _scope) {
@@ -64,10 +68,9 @@ public:
 		block.push_back(node);
 		return true;
 	}
-
-	string DrawNode() {
+	/*ノードの情報の文字データ*/
+	string DrawNode(bool debug = false) {
 		string str = "";
-		//str += "(" + to_string(scope) + "," + to_string(state) + ") ";
 		for (int i = 0; i < scope; i++) {
 			str += "--";
 		}
@@ -76,9 +79,11 @@ public:
 		}
 		str += to_string(id) + " : " + "(" + to_string(offset.begin) + " - " + to_string(offset.end) + ")";
 		str += variableName + " ";
+		if (debug) str += "\n";
 		str += "<" + type + ">";
 		str += "[" + text + "]";
 
+		if (debug) str += "\n";
 		str += "[";
 		for (int i = 0; i < output.size(); i++) {
 			str += output[i] + ",";
@@ -91,8 +96,37 @@ public:
 
 		return str + "\n";
 	}
-	
-	bool DrawNode(int i) {
+	/*表示するノードの幅*/
+	int GetWidth(MyDrawString* myDraw) {
+		return myDraw->GetTextSize(text);
+	}
+	/*表示するノードの高さ*/
+	int GetHeight() {
+		return nodeGraph.sizeY * 2;
+	}
+	/*ノードの図示*/
+	bool DrawNode(MyDrawString* myDraw, int x, int y) {
+		int width = myDraw->GetTextSize(text) + 40;
+		int height = GetHeight();
+		
+		x += scope * 20;
+		nodeGraph.DrawExtend(x, y, width, height);
+		myDraw->Draw_String_Black(x, y, text);
+
+		for (int i = 0; i < input.size(); i++) {
+			int dy = height / (int)input.size();
+			myDraw->Draw_String_White(x - width / 2 - 10, y + dy * (i - (int)input.size() / 2)  , input[i], 6);
+		}
+		int maxOutPutWidth = 0;
+		for (int i = 0; i < output.size(); i++) {
+			int dy = height / (int)output.size();
+			myDraw->Draw_String_White(x + width / 2 + 10, y + dy * (i - (int)output.size() / 2), output[i], 4);
+			
+			int w = myDraw->GetTextSize(output[i]);
+			maxOutPutWidth = (w > maxOutPutWidth) ? w : maxOutPutWidth;
+		}
+		myDraw->Draw_String_White(x + width / 2 + maxOutPutWidth + 25, y, DrawNode(true), 7);
+
 		return true;
 	}
 };
