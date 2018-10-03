@@ -7,31 +7,35 @@ using namespace std;         //  名前空間指定
 class Node {
 private:
 	static Graph nodeGraph;
-	int x, y;
+	static Graph nodeGraph_Left;
+	static Graph nodeGraph_Right;
 	int id;
 	string type;
 	vector<string> output;
 	vector<string> input;
 	vector<Node*> block;
 public:
+	int width, height;
 	string text;
 	Offset offset;
 	int scope, state;
 	string variableName;
 
 	Node(int _id, int _begin, int _end, string _type, string _text, string _variableName) {
-		x = y = 0;
+		width = height = 0;
 		id = _id;
 		scope = state = -1;
 		offset.Set(_begin, _end);
 		type = _type;
 		text = _text;
 		variableName = _variableName;
-		nodeGraph.SetGraph(LoadGraph("picture\\Process.png"));
+		//nodeGraph.SetGraph(LoadGraph("picture\\Process.png"));
 	}
 
 	static void SetGraph() {
 		Node::nodeGraph.SetGraph(LoadGraph("picture\\Process.png"));
+		Node::nodeGraph_Left.SetGraph(LoadGraph("picture\\Process_Left.png"));
+		Node::nodeGraph_Right.SetGraph(LoadGraph("picture\\Process_Right.png"));
 	}
 
 	void addScope(int _scope) {
@@ -96,36 +100,32 @@ public:
 
 		return str + "\n";
 	}
-	/*表示するノードの幅*/
-	int GetWidth(MyDrawString* myDraw) {
-		return myDraw->GetTextSize(text);
-	}
-	/*表示するノードの高さ*/
-	int GetHeight() {
-		return nodeGraph.sizeY * 2;
+	void SetNodeSize(MyDrawString* myDraw) {
+		width = 10 + myDraw->GetTextSize(text) + (nodeGraph_Left.sizeX + nodeGraph_Right.sizeX) * 2;
+		height = nodeGraph.sizeY * 2;
 	}
 	/*ノードの図示*/
 	bool DrawNode(MyDrawString* myDraw, int x, int y) {
-		int width = myDraw->GetTextSize(text) + 40;
-		int height = GetHeight();
-		
 		x += scope * 20;
 		nodeGraph.DrawExtend(x, y, width, height);
+		nodeGraph_Left.DrawExtend(x - width / 2, y, nodeGraph_Left.sizeX * 2, height, 6);
+		nodeGraph_Right.DrawExtend(x + width / 2, y, nodeGraph_Right.sizeX * 2, height, 4);
 		myDraw->Draw_String_Black(x, y, text);
 
+		int inoutPos = 20;
 		for (int i = 0; i < input.size(); i++) {
 			int dy = height / (int)input.size();
-			myDraw->Draw_String_White(x - width / 2 - 10, y + dy * (i - (int)input.size() / 2)  , input[i], 6);
+			myDraw->Draw_String_White(x - width / 2 - inoutPos, y + dy * (i - (int)input.size() / 2), input[i], 6);
 		}
 		int maxOutPutWidth = 0;
 		for (int i = 0; i < output.size(); i++) {
 			int dy = height / (int)output.size();
-			myDraw->Draw_String_White(x + width / 2 + 10, y + dy * (i - (int)output.size() / 2), output[i], 4);
+			myDraw->Draw_String_White(x + width / 2 + inoutPos, y + dy * (i - (int)output.size() / 2), output[i], 4);
 			
 			int w = myDraw->GetTextSize(output[i]);
 			maxOutPutWidth = (w > maxOutPutWidth) ? w : maxOutPutWidth;
 		}
-		myDraw->Draw_String_White(x + width / 2 + maxOutPutWidth + 25, y, DrawNode(true), 7);
+		//myDraw->Draw_String_White(x + width / 2 + maxOutPutWidth + 30, y, DrawNode(true), 7);
 
 		return true;
 	}

@@ -6,7 +6,7 @@ using namespace std;
 
 Graph Arrow::arrowBase;
 Graph Arrow::arrowTip;
-Graph Node::nodeGraph;
+Graph Node::nodeGraph, Node::nodeGraph_Left, Node::nodeGraph_Right;
 CXFile file;
 Map map;
 
@@ -227,19 +227,42 @@ int ParsingNode(char* _filepath)
 	if (error) {
 		clang_disposeTranslationUnit(unit);
 		clang_disposeIndex(index);
+		map.error = true;
 		return -1;
 	}
 	map.init();
 	clang_visitChildren(clang_getTranslationUnitCursor(unit),
 		visitChildrenCallback,
 		NULL);
-	//PrintMap();
+	map.Draw();
 	clang_disposeTranslationUnit(unit);
 	clang_disposeIndex(index);
 	return 1;
 }
 
 /*マップの表示*/
-bool PrintMap() {
+bool PrintMap(char* _filepath) {
+	CXIndex index = clang_createIndex(1, 1);
+	CXTranslationUnit unit = clang_parseTranslationUnit(
+		index,
+		_filepath, nullptr, 0,
+		nullptr, 0,
+		CXTranslationUnit_None);
+
+	bool error = false;
+	for (unsigned I = 0, N = clang_getNumDiagnostics(unit); I != N; ++I) {
+		CXDiagnostic Diag = clang_getDiagnostic(unit, I);
+		CXString String = clang_formatDiagnostic(Diag,
+			clang_defaultDiagnosticDisplayOptions());
+		printfDx("・%d : %s\n", I, clang_getCString(String));
+		clang_disposeString(String);
+		error = true;
+	}
+	if (error) {
+		clang_disposeTranslationUnit(unit);
+		clang_disposeIndex(index);
+		map.error = true;
+		return false;
+	}
 	return map.Draw();
 }

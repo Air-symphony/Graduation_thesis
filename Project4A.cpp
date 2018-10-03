@@ -140,7 +140,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		printfDx("window size[%d, %d]\n", Width, Height);
 
 		//ParsingNode(FileController::GetFilepath());
-		if (!PrintMap()) {
+		if (!PrintMap(FileController::GetFilepath())) {
 			printfDx("Error. Can't PrintMap");
 		}
 		//DrawString(20, 600, FileController::log, GetColor(255,255,255),TRUE);

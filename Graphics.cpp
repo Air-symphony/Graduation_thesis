@@ -29,7 +29,7 @@ public:
 		GetGraphSize(graphID, &sizeX, &sizeY);
 	}
 	/*
-	x, y = 画像を表示させたい座標
+	width, height = 画像を表示させたい座標
 	number = 特定の位置を中心として表示(テンキー)
 	DrawGraph()
 	*/
@@ -54,7 +54,7 @@ public:
 			DrawGraph(x - sizeX, y - sizeY, graphID, TRUE);
 	}
 	/*
-	x, y = 画像を表示させたい座標
+	width, height = 画像を表示させたい座標
 	sizeX, sizeY = 画像の大きさ
 	number = 特定の位置を中心として表示(テンキー)
 	DrawExtendGraph();

@@ -16,7 +16,7 @@ private:
 	vector<vector<int>> variableRelation;
 	/*Debugモード切替*/
 	bool ChangeDebugMode() {
-		if (CheckHitKey(KEY_INPUT_LEFT) != 0) {
+		if (CheckHitKey(KEY_INPUT_SPACE) != 0) {
 			count++;
 			if (count == 1) {
 				debug = !debug;
@@ -55,6 +55,7 @@ public:
 	/*Debug*/
 	int index = 0, count = 0; bool debug = false;
 
+	bool error = false;
 	int id = 0;
 	OffsetList scopeOffset;
 	OffsetList exprOffset;
@@ -70,6 +71,7 @@ public:
 
 	void init() {
 		id = 0;
+		error = false;
 		preId = preState = preScope = -1;
 		equalCount = operatorCount = 0;
 		outputFlag = inoutputFlag = inputFlag = assignmentFlag = compoundAssignFlag = ifstmtFlag = false;
@@ -207,6 +209,7 @@ public:
 	/*マップの表示*/
 	bool Draw() {
 		if (map.size() <= 0) return false;
+		if (error) return false;
 
 		ChangeDebugMode();
 		if (debug) {
@@ -230,14 +233,14 @@ public:
 		else {
 			Node::SetGraph();
 			MyDrawString myDraw(20);
-			int max = 0, y = map[0].GetHeight();
+			int max = 0;
 			for (int i = 0; i < map.size();i++) {
-				int x = map[i].GetWidth(&myDraw);
+				map[i].SetNodeSize(&myDraw);
 				map[i].DrawNode(&myDraw,
-					100 + x / 2,
-					50 + y / 2 + i * (y + 10) - index
+					100 + map[i].width / 2,
+					50 + map[i].height / 2 + i * 10 + max - index
 				);
-				max += y;
+				max += map[i].height;
 			}
 
 			if (CheckHitKey(KEY_INPUT_UP) != 0) {
