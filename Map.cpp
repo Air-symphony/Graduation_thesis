@@ -82,7 +82,9 @@ public:
 		int scope_distance = scope - this_scope;
 		/*ó‚­‚È‚Á‚½ê‡*/
 		if (scope_distance > 0) {
-			abstractCDFD_ids.pop_back();
+			for (int i = 0; i < scope_distance; i++) {
+				abstractCDFD_ids.pop_back();
+			}
 			scope = this_scope;
 			return true;
 		}
