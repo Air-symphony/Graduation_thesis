@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Map.cpp"
+#include "CDFD.cpp"
 #include "clang-c\Index.h"
 using namespace std;
 
@@ -8,7 +8,7 @@ Graph Arrow::arrowBase;
 Graph Arrow::arrowTip;
 Graph Node::nodeGraph, Node::nodeGraph_Left, Node::nodeGraph_Right;
 CXFile file;
-Map map;
+CDFD cdfd;
 
 /*その行のコードの生成*/
 string GetCode(CXCursor cursor) {
@@ -52,71 +52,73 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 
 	string codeStr = GetCode(cursor);
 
-	if (kind == CXCursorKind::CXCursor_DeclStmt)
+	if (kind == CXCursorKind::CXCursor_CXXAccessSpecifier || 
+		kind == CXCursorKind::CXCursor_DeclStmt
+		)
 	{
 		return CXChildVisit_Recurse;
 	}
 	if (kind == CXCursorKind::CXCursor_CompoundStmt || 
-		kind == CXCursorKind::CXCursor_ClassDecl ||
-		//kind == CXCursorKind::CXCursor_CXXAccessSpecifier ||
 		kind == CXCursorKind::CXCursor_ForStmt ||
-		kind == CXCursorKind::CXCursor_WhileStmt ||
+		kind == CXCursorKind::CXCursor_WhileStmt
 		//kind == CXCursorKind::CXCursor_IfStmt ||
-		kind == CXCursorKind::CXCursor_FunctionDecl ||
-		kind == CXCursorKind::CXCursor_CXXMethod)
+		)
 	{
 		codeStr = "";
 	}
-	Node node(map.id, nameRange.begin_int_data, nameRange.end_int_data, clangVariableType, codeStr, variableName);
+	else if (kind == CXCursorKind::CXCursor_ClassDecl || 
+		kind == CXCursorKind::CXCursor_FunctionDecl ||
+		kind == CXCursorKind::CXCursor_CXXMethod)
+	{
+		codeStr = variableName;
+	}
+	Node node(cdfd.node_id, nameRange.begin_int_data, nameRange.end_int_data, clangVariableType, codeStr, variableName);
 
 	bool ifstmt = kind == CXCursorKind::CXCursor_IfStmt;
-	map.CheckScope(&node, ifstmt);
-	map.CheckExpression(&node);
-	map.OpenLock(node);
-	/*変数,メンバ変数宣言*/
+	cdfd.CheckScope(&node, ifstmt);
+	cdfd.CheckExpression(&node);
+	cdfd.OpenLock(node);
+	/*変数,メンバ変数,引数宣言*/
 	if (kind == CXCursorKind::CXCursor_VarDecl ||
-		kind == CXCursorKind::CXCursor_FieldDecl)
+		kind == CXCursorKind::CXCursor_FieldDecl ||
+		kind == CXCursorKind::CXCursor_ParmDecl)
 	{
 		node.AddOutput(variableName);
-		map.Save_id_state_scope(node.state, node.scope);
-		map.DeclLock = true;
+		cdfd.Save_id_state_scope(node.state, node.scope);
+		cdfd.DeclLock = true;
 	}
 	/*関数,メンバ関数宣言*/
 	else if (kind == CXCursorKind::CXCursor_FunctionDecl ||
 		kind == CXCursorKind::CXCursor_CXXMethod) {
-		map.Save_id_state_scope(node.state, node.scope);
-	}
-	/*関数の引数宣言*/
-	else if (kind == CXCursorKind::CXCursor_ParmDecl) {
-		map.AddInOut_PreNode(node, INPUT);
+		cdfd.Save_id_state_scope(node.state, node.scope);
 	}
 	/*return文*/
 	else if (kind == CXCursorKind::CXCursor_ReturnStmt) {
-		map.Save_id_state_scope(node.state, node.scope);
-		map.DeclLock = map.inoutputFlag = true;
+		cdfd.Save_id_state_scope(node.state, node.scope);
+		cdfd.DeclLock = cdfd.inoutputFlag = true;
 	}
 	/*i++など*/
 	else if (kind == CXCursorKind::CXCursor_UnaryOperator) {
-		map.Save_id_state_scope(node.state, node.scope);
-		map.inoutputFlag = true;
+		cdfd.Save_id_state_scope(node.state, node.scope);
+		cdfd.inoutputFlag = true;
 	}
 	/*i+=aなど*/
 	else if (kind == CXCursorKind::CXCursor_CompoundAssignOperator) {
-		map.Save_id_state_scope(node.state, node.scope);
-		map.DeclLock = map.inputFlag = map.compoundAssignFlag = true;
+		cdfd.Save_id_state_scope(node.state, node.scope);
+		cdfd.DeclLock = cdfd.inputFlag = cdfd.compoundAssignFlag = true;
 	}
 	/*i+=aの詳細など*/
 	else if (kind == CXCursorKind::CXCursor_MemberRefExpr &&
-		map.compoundAssignFlag) {
-		map.AddInOut_PreNode(node, INOUTPUT);
-		map.compoundAssignFlag = false;
+		cdfd.compoundAssignFlag) {
+		cdfd.AddInOut_PreNode(node, INOUTPUT);
+		cdfd.compoundAssignFlag = false;
 	}
 	/*関数呼び出し*/
 	else if (kind == CXCursorKind::CXCursor_CallExpr) {
-		if (!map.DeclLock && !map.binaryLock) {
-			map.Save_id_state_scope(node.state, node.scope);
+		if (!cdfd.DeclLock && !cdfd.binaryLock) {
+			cdfd.Save_id_state_scope(node.state, node.scope);
 		}
-		map.inputFlag = true;
+		cdfd.inputFlag = true;
 	}
 	/*その式の詳細を調べる*/
 	else if (kind == CXCursorKind::CXCursor_BinaryOperator)
@@ -126,17 +128,17 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 			(codeStr.find(">") != std::string::npos) ||
 			(codeStr.find("==") != std::string::npos)
 			) {
-			if (!map.DeclLock) {
-				map.Save_id_state_scope(node.state, node.scope);
+			if (!cdfd.DeclLock) {
+				cdfd.Save_id_state_scope(node.state, node.scope);
 			}
-			map.inputFlag = true;
+			cdfd.inputFlag = true;
 		}
 		//a = b = c, a = b + cのなどの検知
-		else if(!map.binaryLock) {
-			if (!map.DeclLock) {
-				map.Save_id_state_scope(node.state, node.scope);
+		else if(!cdfd.binaryLock) {
+			if (!cdfd.DeclLock) {
+				cdfd.Save_id_state_scope(node.state, node.scope);
 			}
-			map.binaryLock = true;
+			cdfd.binaryLock = true;
 			int equalCount = 0, operatorCount = 0;
 			char key = '=';
 			char keys[4] = { '+', '-', '*', '/' };
@@ -151,25 +153,29 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 					}
 				}
 			}
-			map.equalCount = equalCount;
-			map.operatorCount = operatorCount + equalCount + 1;
-			map.assignmentFlag = (equalCount > 0);
+			cdfd.equalCount = equalCount;
+			cdfd.operatorCount = operatorCount + equalCount + 1;
+			cdfd.assignmentFlag = (equalCount > 0);
 		}
 	}
+	/*for文の場合*/
+	else if (kind == CXCursorKind::CXCursor_ForStmt) {
+
+	}
 	/*if(),else if()などの条件式の回収*/
-	if (map.ifstmtFlag) {
-		map.SetText_PreNode(node);
-		map.DeclLock = map.ifstmtFlag = false;
+	if (cdfd.ifstmtFlag) {
+		cdfd.SetText_PreNode(node);
+		cdfd.DeclLock = cdfd.ifstmtFlag = false;
 	}
 	/*if、else ifの場合*/
 	if (kind == CXCursorKind::CXCursor_IfStmt ||
 		kind == CXCursorKind::CXCursor_WhileStmt) {
-		map.Save_id_state_scope(node.state, node.scope);
-		map.DeclLock = map.ifstmtFlag = true;
+		cdfd.Save_id_state_scope(node.state, node.scope);
+		cdfd.DeclLock = cdfd.ifstmtFlag = true;
 	}
 
-	if (!map.SetNodeAbility(node))//{}
-		map.AddMap(node);
+	if (!cdfd.SetNodeAbility(node))//{}
+		cdfd.AddNode(node);
 	
 	/*一番上の階層のみを表示*/
 	if (kind == CXCursorKind::CXCursor_ClassDecl || 
@@ -179,17 +185,20 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 		kind == CXCursorKind::CXCursor_WhileStmt || 
 		kind == CXCursorKind::CXCursor_IfStmt)
 	{
-		map.scopeOffset.AddOffset(nameRange.begin_int_data, nameRange.end_int_data);
+		cdfd.scopeOffset.AddOffset(nameRange.begin_int_data, nameRange.end_int_data);
+		if (kind != CXCursorKind::CXCursor_IfStmt) {
+
+		}
 	}
 	else {
-		map.exprOffset.AddOffset(nameRange.begin_int_data, nameRange.end_int_data);
+		cdfd.exprOffset.AddOffset(nameRange.begin_int_data, nameRange.end_int_data);
 	}
 	
 	/*
 	if (kind == CXCursorKind::CXCursor_DeclRefExpr) {
-		map.AddVariableRelation(map.id - 1, variableName);
+		nodes.AddVariableRelation(nodes.node_id - 1, variableName);
 	}
-	map.AddVariableName(map.id - 1, typeStr, variableName);
+	nodes.AddVariableName(nodes.node_id - 1, typeStr, variableName);
 	*/
 	return CXChildVisit_Recurse;
 }
@@ -227,14 +236,14 @@ int ParsingNode(char* _filepath)
 	if (error) {
 		clang_disposeTranslationUnit(unit);
 		clang_disposeIndex(index);
-		map.error = true;
+		cdfd.error = true;
 		return -1;
 	}
-	map.init();
+	cdfd.init();
 	clang_visitChildren(clang_getTranslationUnitCursor(unit),
 		visitChildrenCallback,
 		NULL);
-	map.Draw();
+	cdfd.Draw();
 	clang_disposeTranslationUnit(unit);
 	clang_disposeIndex(index);
 	return 1;
@@ -261,8 +270,8 @@ bool PrintMap(char* _filepath) {
 	if (error) {
 		clang_disposeTranslationUnit(unit);
 		clang_disposeIndex(index);
-		map.error = true;
+		cdfd.error = true;
 		return false;
 	}
-	return map.Draw();
+	return cdfd.Draw();
 }

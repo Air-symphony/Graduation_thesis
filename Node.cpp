@@ -101,31 +101,37 @@ public:
 		return str + "\n";
 	}
 	void SetNodeSize(MyDrawString* myDraw) {
-		width = 10 + myDraw->GetTextSize(text) + (nodeGraph_Left.sizeX + nodeGraph_Right.sizeX) * 2;
+		width = 10 + myDraw->GetTextWidth(text) + (nodeGraph_Left.sizeX + nodeGraph_Right.sizeX) * 2;
 		height = nodeGraph.sizeY * 2;
 	}
 	/*ÉmÅ[ÉhÇÃê}é¶*/
 	bool DrawNode(MyDrawString* myDraw, int x, int y) {
 		x += scope * 20;
+		int inputSize = (int)input.size(), outputSize = (int)output.size();
+		int limitSize = 3;
+		if (limitSize < inputSize || limitSize < outputSize) {
+			int size = (inputSize < outputSize) ? outputSize : inputSize;
+			height += myDraw->GetTextHeight() * (size - limitSize);
+		}
+		
 		nodeGraph.DrawExtend(x, y, width, height);
 		nodeGraph_Left.DrawExtend(x - width / 2, y, nodeGraph_Left.sizeX * 2, height, 6);
 		nodeGraph_Right.DrawExtend(x + width / 2, y, nodeGraph_Right.sizeX * 2, height, 4);
 		myDraw->Draw_String_Black(x, y, text);
 
 		int inoutPos = 20;
-		for (int i = 0; i < input.size(); i++) {
-			int dy = height / (int)input.size();
-			myDraw->Draw_String_White(x - width / 2 - inoutPos, y + dy * (i - (int)input.size() / 2), input[i], 6);
+		for (int i = 0; i < inputSize; i++) {
+			int dy = height / (int)(inputSize + 1);
+			myDraw->Draw_String_White(x - width / 2 - inoutPos, y - height / 2 + dy * (i + 1), input[i], 6);
 		}
 		int maxOutPutWidth = 0;
-		for (int i = 0; i < output.size(); i++) {
-			int dy = height / (int)output.size();
-			myDraw->Draw_String_White(x + width / 2 + inoutPos, y + dy * (i - (int)output.size() / 2), output[i], 4);
+		for (int i = 0; i < outputSize; i++) {
+			int dy = height / (int)(outputSize + 1);
+			myDraw->Draw_String_White(x + width / 2 + inoutPos, y - height / 2 + dy * (i + 1), output[i], 4);
 			
-			int w = myDraw->GetTextSize(output[i]);
+			int w = myDraw->GetTextWidth(output[i]);
 			maxOutPutWidth = (w > maxOutPutWidth) ? w : maxOutPutWidth;
 		}
-		//myDraw->Draw_String_White(x + width / 2 + maxOutPutWidth + 30, y, DrawNode(true), 7);
 
 		return true;
 	}

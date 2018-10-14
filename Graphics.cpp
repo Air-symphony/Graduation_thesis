@@ -88,7 +88,7 @@ private:
 	int mainFontSize;
 
 	void Draw_String(int x, int y, int _color, std::string text, int number = 5) {
-		int StrWidth = GetTextSize(text);
+		int StrWidth = GetTextWidth(text);
 
 		if (number == 1)
 			DrawString(x, y, text.c_str(), _color);
@@ -122,9 +122,13 @@ public:
 		SetDefaultMainFontSize();
 	}
 	/*•¶š‚Ì‰¡•‚Ìæ“¾*/
-	int GetTextSize(std::string text) {
+	int GetTextWidth(std::string text) {
 		int len = (int)strlen(text.c_str());
 		return GetDrawStringWidth(text.c_str(), (int)strlen(text.c_str()));
+	}
+	/*•¶š‚Ìc•‚Ìæ“¾*/
+	int GetTextHeight() {
+		return mainFontSize;
 	}
 	/*mainFontSize = size;*/
 	void SetMainFontSize(int size) {
