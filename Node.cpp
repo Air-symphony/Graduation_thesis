@@ -20,6 +20,8 @@ public:
 	Offset offset;
 	int scope, state;
 	string variableName;
+	/*‹ï‘Ì‰»‚³‚ê‚éCDFD‚ÌID*/
+	int concreteCDFD_id;
 
 	Node(int _id, int _begin, int _end, string _type, string _text, string _variableName) {
 		width = height = 0;
@@ -29,6 +31,7 @@ public:
 		type = _type;
 		text = _text;
 		variableName = _variableName;
+		concreteCDFD_id = -1;
 		//nodeGraph.SetGraph(LoadGraph("picture\\Process.png"));
 	}
 
@@ -83,6 +86,7 @@ public:
 		}
 		str += to_string(id) + " : " + "(" + to_string(offset.begin) + " - " + to_string(offset.end) + ")";
 		str += variableName + " ";
+		str += ":" + to_string(concreteCDFD_id) + ": ";
 		if (debug) str += "\n";
 		str += "<" + type + ">";
 		str += "[" + text + "]";

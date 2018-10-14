@@ -55,9 +55,9 @@ public:
 	/*CDFDの番号*/
 	int cdfd_id;
 	/*Debug*/
-	int index = 0, count = 0; bool debug = false;
+	int index = 0, count = 0;
+	static bool debug;
 
-	bool error = false;
 	int node_id = 0;
 	OffsetList scopeOffset;
 	OffsetList exprOffset;
@@ -74,7 +74,6 @@ public:
 
 	void init() {
 		node_id = 0;
-		error = false;
 		preId = preState = preScope = -1;
 		equalCount = operatorCount = 0;
 		outputFlag = inoutputFlag = inputFlag = assignmentFlag = compoundAssignFlag = ifstmtFlag = false;
@@ -182,6 +181,12 @@ public:
 		return true;
 	}
 
+
+	/*具体化されるCDFDのIDをnodeにset*/
+	void SetConcreteCDFD(int id) {
+		nodes[node_id - 1].concreteCDFD_id = id;
+	}
+
 	int AddVariableName(int _id, string type, string variable) {
 		if (variable == "") return 0;
 
@@ -211,8 +216,10 @@ public:
 
 	/*マップの表示*/
 	bool Draw() {
-		if (nodes.size() <= 0) return false;
-		if (error) return false;
+		if (nodes.size() <= 0) {
+			printfDx("Error[cdfd:%d] : nodes size = %d\n", cdfd_id, nodes.size());
+			return false;
+		}
 
 		ChangeDebugMode();
 		if (debug) {
