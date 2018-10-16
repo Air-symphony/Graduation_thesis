@@ -2,9 +2,11 @@
 #include "Arrow.cpp"
 #include "Node.cpp"
 
-#define INPUT 1
-#define OUTPUT 2
-#define INOUTPUT 3
+enum Command{
+	INPUT_,
+	OUTPUT,
+	INOUTPUT
+};
 
 class CDFD {
 private:
@@ -129,19 +131,21 @@ public:
 		preScope = scope;
 	}
 	/*
-	command = INPUT, OUTPUT, INOUTPUT*/
-	bool AddInOut_PreNode(Node node, int command) {
-		if (command == INPUT) {
+	command = INPUT_, OUTPUT, INOUTPUT*/
+	bool AddInOut_PreNode(Node node, Command command) {
+		switch (command) {
+		case Command::INPUT_: 
 			return nodes[preId].AddInput(node.variableName);
-		}
-		else if(command == OUTPUT) {
+		
+		case Command::OUTPUT:
 			return nodes[preId].AddOutput(node.variableName);
-		}
-		else if (command == INOUTPUT) {
+		
+		case Command::INOUTPUT: 
 			return (nodes[preId].AddInput(node.variableName) &&
 				nodes[preId].AddOutput(node.variableName));
+		default:
+			return false;
 		}
-		return false;
 	}
 
 	bool SetText_PreNode(Node node) {
@@ -156,21 +160,21 @@ public:
 
 		/*Ž©•ª‚æ‚è‰º‚Ìî•ñ‚Ìê‡*/
 		if (inoutputFlag) {
-			AddInOut_PreNode(node, INOUTPUT);
+			AddInOut_PreNode(node, Command::INOUTPUT);
 		}
 		else if (outputFlag) {
-			AddInOut_PreNode(node, OUTPUT);
+			AddInOut_PreNode(node, Command::OUTPUT);
 		}
 		else if (inputFlag) {
-			AddInOut_PreNode(node, INPUT);
+			AddInOut_PreNode(node, Command::INPUT_);
 		}
 		else if (operatorCount > 0) {
 			bool insert = false;
 			if (assignmentFlag) {
-				insert = AddInOut_PreNode(node, OUTPUT);
+				insert = AddInOut_PreNode(node, Command::OUTPUT);
 			}
 			else {
-				insert = AddInOut_PreNode(node, INPUT);
+				insert = AddInOut_PreNode(node, Command::INPUT_);
 			}
 			if (insert) {
 				equalCount--;
@@ -242,7 +246,7 @@ public:
 		}
 		else {
 			Node::SetGraph();
-			MyDrawString myDraw(20);
+			MyDrawString myDraw(15);
 			int max = 0;
 			for (int i = 0; i < nodes.size();i++) {
 				nodes[i].SetNodeSize(&myDraw);

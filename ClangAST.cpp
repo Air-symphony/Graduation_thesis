@@ -4,9 +4,10 @@
 #include "clang-c\Index.h"
 using namespace std;
 
-Graph Arrow::arrowBase;
-Graph Arrow::arrowTip;
-Graph Node::nodeGraph, Node::nodeGraph_Left, Node::nodeGraph_Right;
+Graph Arrow::arrowBase, Arrow::arrowTip;
+Graph Node::processGraph, Node::process_LeftGraph, Node::process_RightGraph;
+Graph Node::loopProcess_RightGraph;
+Graph Node::branchProcess_StandardGraph, Node::branchProcess_DefaultGraph;
 bool CDFD::debug;
 CXFile file;
 Map map;
@@ -81,7 +82,7 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 
 	Node node(cdfd->node_id, nameRange.begin_int_data, nameRange.end_int_data, clangVariableType, codeStr, variableName);
 
-	bool ifstmt = kind == CXCursorKind::CXCursor_IfStmt;
+	bool ifstmt = (kind == CXCursorKind::CXCursor_IfStmt);
 	cdfd->CheckScope(&node, ifstmt);
 	cdfd->CheckExpression(&node);
 	cdfd->OpenLock(node);
@@ -117,7 +118,7 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 	/*i+=a‚ÌÚ×‚È‚Ç*/
 	else if (kind == CXCursorKind::CXCursor_MemberRefExpr &&
 		cdfd->compoundAssignFlag) {
-		cdfd->AddInOut_PreNode(node, INOUTPUT);
+		cdfd->AddInOut_PreNode(node, Command::INOUTPUT);
 		cdfd->compoundAssignFlag = false;
 	}
 	/*ŠÖ”ŒÄ‚Ño‚µ*/
@@ -165,16 +166,24 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 			cdfd->assignmentFlag = (equalCount > 0);
 		}
 	}
+	/*if,else if•¶‚Ìê‡*/
+	else if (kind == CXCursorKind::CXCursor_IfStmt) {
+		node.ChangeProcessType(ProcessType::BRANCH_STANDARD);
+	}
 	/*for•¶‚Ìê‡*/
 	else if (kind == CXCursorKind::CXCursor_ForStmt) {
-
+		node.ChangeProcessType(ProcessType::LOOP);
+	}
+	/*while•¶‚Ìê‡*/
+	else if (kind == CXCursorKind::CXCursor_WhileStmt) {
+		node.ChangeProcessType(ProcessType::LOOP);
 	}
 	/*if(),else if()‚È‚Ç‚ÌðŒŽ®‚Ì‰ñŽû*/
 	if (cdfd->ifstmtFlag) {
 		cdfd->SetText_PreNode(node);
 		cdfd->DeclLock = cdfd->ifstmtFlag = false;
 	}
-	/*ifAelse if‚Ìê‡*/
+	/*ŽŸŽ®‚ÌðŒŽ®‚ðŽæ‚èž‚Þ‚½‚ß*/
 	if (kind == CXCursorKind::CXCursor_IfStmt ||
 		kind == CXCursorKind::CXCursor_WhileStmt) {
 		cdfd->Save_id_state_scope(node.state, node.scope);

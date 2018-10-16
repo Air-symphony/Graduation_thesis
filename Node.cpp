@@ -4,16 +4,25 @@
 #include <string>
 using namespace std;         //  名前空間指定
 
+/*ノードの種類*/
+enum ProcessType {
+	NORMAL,
+	BRANCH_STANDARD,
+	BRANCH_DEFAULT,
+	LOOP,
+};
+
 class Node {
 private:
-	static Graph nodeGraph;
-	static Graph nodeGraph_Left;
-	static Graph nodeGraph_Right;
+	static Graph processGraph, process_LeftGraph, process_RightGraph;
+	static Graph loopProcess_RightGraph;
+	static Graph branchProcess_StandardGraph, branchProcess_DefaultGraph;
 	int id;
 	string type;
 	vector<string> output;
 	vector<string> input;
 	vector<Node*> block;
+	ProcessType processType;
 public:
 	int width, height;
 	string text;
@@ -32,13 +41,16 @@ public:
 		text = _text;
 		variableName = _variableName;
 		concreteCDFD_id = -1;
-		//nodeGraph.SetGraph(LoadGraph("picture\\Process.png"));
+		processType = ProcessType::NORMAL;
 	}
 
 	static void SetGraph() {
-		Node::nodeGraph.SetGraph(LoadGraph("picture\\Process.png"));
-		Node::nodeGraph_Left.SetGraph(LoadGraph("picture\\Process_Left.png"));
-		Node::nodeGraph_Right.SetGraph(LoadGraph("picture\\Process_Right.png"));
+		Node::processGraph.SetGraph(LoadGraph("picture\\Process.png"));
+		Node::process_LeftGraph.SetGraph(LoadGraph("picture\\Process_Left.png"));
+		Node::process_RightGraph.SetGraph(LoadGraph("picture\\Process_Right.png"));
+		Node::loopProcess_RightGraph.SetGraph(LoadGraph("picture\\Process_Right_Loop.png"));
+		Node::branchProcess_StandardGraph.SetGraph(LoadGraph("picture\\BranchProcess_Standard.png"));
+		Node::branchProcess_DefaultGraph.SetGraph(LoadGraph("picture\\BranchProcess_Default.png"));
 	}
 
 	void addScope(int _scope) {
@@ -69,6 +81,11 @@ public:
 			return true;
 		}
 		return false;
+	}
+
+	bool ChangeProcessType(ProcessType _type) {
+		processType = _type;
+		return true;
 	}
 
 	bool AddNode(Node* node) {
@@ -104,9 +121,29 @@ public:
 
 		return str + "\n";
 	}
+	/*ノードの大きさを設定*/
 	void SetNodeSize(MyDrawString* myDraw) {
-		width = 10 + myDraw->GetTextWidth(text) + (nodeGraph_Left.sizeX + nodeGraph_Right.sizeX) * 2;
-		height = nodeGraph.sizeY * 2;
+		switch (processType)
+		{
+		case NORMAL:
+			width = myDraw->GetTextWidth(text) + (process_LeftGraph.sizeX + process_RightGraph.sizeX);
+			height = processGraph.sizeY;
+			break;
+		case BRANCH_STANDARD:
+			width = myDraw->GetTextWidth(text) + (process_LeftGraph.sizeX + process_RightGraph.sizeX);
+			height = branchProcess_StandardGraph.sizeY;
+			break;
+		case BRANCH_DEFAULT:
+			width = myDraw->GetTextWidth(text) + (process_LeftGraph.sizeX + process_RightGraph.sizeX);
+			height = branchProcess_DefaultGraph.sizeY;
+			break;
+		case LOOP:
+			width = myDraw->GetTextWidth(text) + (process_LeftGraph.sizeX + loopProcess_RightGraph.sizeX);
+			height = processGraph.sizeY;
+			break;
+		default:
+			break;
+		}
 	}
 	/*ノードの図示*/
 	bool DrawNode(MyDrawString* myDraw, int x, int y) {
@@ -118,12 +155,30 @@ public:
 			height += myDraw->GetTextHeight() * (size - limitSize);
 		}
 		
-		nodeGraph.DrawExtend(x, y, width, height);
-		nodeGraph_Left.DrawExtend(x - width / 2, y, nodeGraph_Left.sizeX * 2, height, 6);
-		nodeGraph_Right.DrawExtend(x + width / 2, y, nodeGraph_Right.sizeX * 2, height, 4);
+		switch (processType)
+		{
+		case NORMAL:
+			processGraph.DrawExtend(x, y, width, height);
+			process_LeftGraph.DrawExtend(x - width / 2, y, process_LeftGraph.sizeX, height, 6);
+			process_RightGraph.DrawExtend(x + width / 2, y, process_RightGraph.sizeX, height, 4);
+			break;
+		case BRANCH_STANDARD:
+			branchProcess_StandardGraph.DrawExtend(x, y, width, height);
+			break;
+		case BRANCH_DEFAULT:
+			branchProcess_DefaultGraph.DrawExtend(x, y, width, height);
+			break;
+		case LOOP:
+			processGraph.DrawExtend(x, y, width, height);
+			process_LeftGraph.DrawExtend(x - width / 2, y, process_LeftGraph.sizeX, height, 6);
+			loopProcess_RightGraph.DrawExtend(x + width / 2, y, loopProcess_RightGraph.sizeX, height, 4);
+			break;
+		default:
+			break;
+		}
 		myDraw->Draw_String_Black(x, y, text);
 
-		int inoutPos = 20;
+		int inoutPos = 10;
 		for (int i = 0; i < inputSize; i++) {
 			int dy = height / (int)(inputSize + 1);
 			myDraw->Draw_String_White(x - width / 2 - inoutPos, y - height / 2 + dy * (i + 1), input[i], 6);
@@ -136,6 +191,8 @@ public:
 			int w = myDraw->GetTextWidth(output[i]);
 			maxOutPutWidth = (w > maxOutPutWidth) ? w : maxOutPutWidth;
 		}
+		/*ノードの大きさを表示*/
+		//myDraw->Draw_String_White(x + width / 2, y - height / 2, to_string(width) + "×" + to_string(height), 7);
 
 		return true;
 	}
