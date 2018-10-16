@@ -65,9 +65,12 @@ public:
 	OffsetList exprOffset;
 	int preId, preScope, preState;
 	bool inoutputFlag, inputFlag, outputFlag;
-	bool assignmentFlag, compoundAssignFlag, ifstmtFlag;
+	bool assignmentFlag, compoundAssignFlag, getConditionFlag, ifStmtFlag;
 	int equalCount, operatorCount;
 	bool binaryLock, DeclLock;
+
+	/*そのif文内で実行されるプロセスを回収するため*/
+	vector<int> scopeOffset_nodeId;
 
 	CDFD(int id = 0) {
 		init();
@@ -78,7 +81,7 @@ public:
 		node_id = 0;
 		preId = preState = preScope = -1;
 		equalCount = operatorCount = 0;
-		outputFlag = inoutputFlag = inputFlag = assignmentFlag = compoundAssignFlag = ifstmtFlag = false;
+		outputFlag = inoutputFlag = inputFlag = assignmentFlag = compoundAssignFlag = getConditionFlag = ifStmtFlag = false;
 		binaryLock = DeclLock = false;
 		int i = 0;
 		for (i = (int)nodes.size(); i > 0; i--) {
@@ -90,11 +93,14 @@ public:
 		for (i = (int)variableRelation.size(); i > 0; i--) {
 			variableRelation.pop_back();
 		}
+		for (i = (int)scopeOffset_nodeId.size(); i > 0; i--) {
+			scopeOffset_nodeId.pop_back();
+		}
 		scopeOffset.init();
 		exprOffset.init();
 	}
 
-	/*for{}、if{}などのインデントの深さ*/
+	/*ifのインデントの深さ*/
 	void CheckScope(Node *node, bool ifstmt = false) {
 		int scope = scopeOffset.CheckOffset(node->offset, ifstmt);
 		node->addScope(scope);
@@ -105,9 +111,40 @@ public:
 		node->addState(state);
 	}
 
-	void AddNode(Node node) {
+	void AddNode(Node node, bool ifstmt) {
+		if (scopeOffset.CheckOffset_ElseStmt(node.offset)) {
+			/*elseNodeの作成*/
+			Node elseNode(node_id, node.offset.begin, node.offset.end, "elseStmt", "", "");
+			elseNode.addScope(node.scope - 1);
+			elseNode.addState(node.state);
+			elseNode.ChangeProcessType(BRANCH_DEFAULT);
+			/*input情報の入力先をずらす*/
+			if (node_id == preId) {
+				preId++;
+			}
+			nodes.push_back(elseNode);
+			AddProcess_IfStmtNode(elseNode, true);
+			node_id++;
+			node.id++;
+		}
 		nodes.push_back(node);
+		AddProcess_IfStmtNode(node, ifstmt);
 		node_id++;
+	}
+
+	void AddProcess_IfStmtNode(Node node, bool ifstmt) {
+		int size = (int)scopeOffset_nodeId.size();
+		for (int i = node.scope; i < size; i++) {
+			scopeOffset_nodeId.pop_back();
+		}
+		/*if文内に存在する場合*/
+		if (0 < scopeOffset_nodeId.size()) {
+			int id = scopeOffset_nodeId[scopeOffset_nodeId.size() - 1];
+			nodes[id].AddNode(node_id);
+		}
+		if (ifstmt) {
+			scopeOffset_nodeId.push_back(node_id);
+		}
 	}
 	/*今から作業するコードが、以前のノードに内包されていなければ、全てのフラグを解除*/
 	bool OpenLock(Node node) {
@@ -115,7 +152,7 @@ public:
 			node.state <= preState) {
 			preState = -1;
 			binaryLock = DeclLock = inoutputFlag = inputFlag = 
-				outputFlag = assignmentFlag = ifstmtFlag = false;
+				outputFlag = assignmentFlag = getConditionFlag = false;
 			return true;
 		}
 		return false;
@@ -153,8 +190,10 @@ public:
 		return true;
 	}
 
-	/*各ノードに入出力される変数を指定
-	指定できたということは、そのノードは表示する必要がない*/
+	/*
+	*各ノードに入出力される変数を指定
+	*指定できたということは、そのノードは表示する必要がない
+	*/
 	bool SetNodeAbility(Node node, bool input = true) {
 		if (preId == node_id || preState < 0) return false;
 

@@ -17,13 +17,13 @@ private:
 	static Graph processGraph, process_LeftGraph, process_RightGraph;
 	static Graph loopProcess_RightGraph;
 	static Graph branchProcess_StandardGraph, branchProcess_DefaultGraph;
-	int id;
 	string type;
 	vector<string> output;
 	vector<string> input;
-	vector<Node*> block;
+	vector<int> block;
 	ProcessType processType;
 public:
+	int id;
 	int width, height;
 	string text;
 	Offset offset;
@@ -42,6 +42,9 @@ public:
 		variableName = _variableName;
 		concreteCDFD_id = -1;
 		processType = ProcessType::NORMAL;
+		for (int i = (int)block.size(); i > 0; i--) {
+			block.pop_back();
+		}
 	}
 
 	static void SetGraph() {
@@ -88,8 +91,8 @@ public:
 		return true;
 	}
 
-	bool AddNode(Node* node) {
-		block.push_back(node);
+	bool AddNode(int id) {
+		block.push_back(id);
 		return true;
 	}
 	/*ノードの情報の文字データ*/
@@ -104,11 +107,9 @@ public:
 		str += to_string(id) + " : " + "(" + to_string(offset.begin) + " - " + to_string(offset.end) + ")";
 		str += variableName + " ";
 		str += ":" + to_string(concreteCDFD_id) + ": ";
-		if (debug) str += "\n";
 		str += "<" + type + ">";
 		str += "[" + text + "]";
 
-		if (debug) str += "\n";
 		str += "[";
 		for (int i = 0; i < output.size(); i++) {
 			str += output[i] + ",";
@@ -117,8 +118,11 @@ public:
 		for (int i = 0; i < input.size(); i++) {
 			str += input[i] + ",";
 		}
+		str += "] [";
+		for (int i = 0; i < block.size(); i++) {
+			str += to_string(block[i]) + ",";
+		}
 		str += "]";
-
 		return str + "\n";
 	}
 	/*ノードの大きさを設定*/

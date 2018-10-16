@@ -55,13 +55,13 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 
 	string codeStr = GetCode(cursor);
 
-	if (kind == CXCursorKind::CXCursor_CXXAccessSpecifier || 
+	if (kind == CXCursorKind::CXCursor_CXXAccessSpecifier ||
 		kind == CXCursorKind::CXCursor_DeclStmt
 		)
 	{
 		return CXChildVisit_Recurse;
 	}
-	if (kind == CXCursorKind::CXCursor_CompoundStmt || 
+	if (kind == CXCursorKind::CXCursor_CompoundStmt ||
 		kind == CXCursorKind::CXCursor_ForStmt ||
 		kind == CXCursorKind::CXCursor_WhileStmt
 		//kind == CXCursorKind::CXCursor_IfStmt ||
@@ -69,7 +69,7 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 	{
 		codeStr = "";
 	}
-	else if (kind == CXCursorKind::CXCursor_ClassDecl || 
+	else if (kind == CXCursorKind::CXCursor_ClassDecl ||
 		kind == CXCursorKind::CXCursor_FunctionDecl ||
 		kind == CXCursorKind::CXCursor_CXXMethod)
 	{
@@ -142,7 +142,7 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 			cdfd->inputFlag = true;
 		}
 		//a = b = c, a = b + c‚Ì‚È‚Ç‚ÌŒŸ’m
-		else if(!cdfd->binaryLock) {
+		else if (!cdfd->binaryLock) {
 			if (!cdfd->DeclLock) {
 				cdfd->Save_id_state_scope(node.state, node.scope);
 			}
@@ -169,6 +169,7 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 	/*if,else if•¶‚Ìê‡*/
 	else if (kind == CXCursorKind::CXCursor_IfStmt) {
 		node.ChangeProcessType(ProcessType::BRANCH_STANDARD);
+		cdfd->ifStmtFlag = true;
 	}
 	/*for•¶‚Ìê‡*/
 	else if (kind == CXCursorKind::CXCursor_ForStmt) {
@@ -179,20 +180,19 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 		node.ChangeProcessType(ProcessType::LOOP);
 	}
 	/*if(),else if()‚È‚Ç‚ÌğŒ®‚Ì‰ñû*/
-	if (cdfd->ifstmtFlag) {
+	if (cdfd->getConditionFlag) {
 		cdfd->SetText_PreNode(node);
-		cdfd->DeclLock = cdfd->ifstmtFlag = false;
+		cdfd->DeclLock = cdfd->getConditionFlag = false;
 	}
 	/*Ÿ®‚ÌğŒ®‚ğæ‚è‚Ş‚½‚ß*/
 	if (kind == CXCursorKind::CXCursor_IfStmt ||
 		kind == CXCursorKind::CXCursor_WhileStmt) {
 		cdfd->Save_id_state_scope(node.state, node.scope);
-		cdfd->DeclLock = cdfd->ifstmtFlag = true;
+		cdfd->DeclLock = cdfd->getConditionFlag = true;
 	}
 
-	if (!cdfd->SetNodeAbility(node))//{}
-		cdfd->AddNode(node);
-
+	if (!cdfd->SetNodeAbility(node)) //{}
+		cdfd->AddNode(node, ifstmt);
 	
 	/*ˆê”Ôã‚ÌŠK‘w‚Ì‚İ‚ğ•\¦*/
 	if (kind == CXCursorKind::CXCursor_ClassDecl || 
@@ -232,9 +232,11 @@ int ParsingNode(char* _filepath)
 		nullptr, 0,
 		CXTranslationUnit_None);
 
+	map.error = false;
 	if (unit == nullptr)
 	{
 		printfDx("ERROR : [%s] not found.", _filepath);
+		map.error = true;
 		return -1;
 	}
 	file = clang_getFile(unit, _filepath);

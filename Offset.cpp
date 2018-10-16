@@ -62,10 +62,20 @@ public:
 				}
 			}
 			else
-			if (list[i].end < begin) {
-				list.pop_back();
-			}
+				if (list[i].end < begin) {
+					list.pop_back();
+				}
 		}
 		return count;
+	}
+
+	bool CheckOffset_ElseStmt(Offset offset) {
+		for (int i = (int)list.size() - 1; i >= 0; i--) {
+			if (list[i].begin <= offset.begin &&
+				offset.end == list[i].end) {
+					return true;
+			}
+		}
+		return false;
 	}
 };
