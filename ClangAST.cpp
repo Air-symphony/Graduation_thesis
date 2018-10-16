@@ -229,10 +229,6 @@ int ParsingNode(char* _filepath)
 		return -1;
 	}
 	file = clang_getFile(unit, _filepath);
-	CXString str = clang_getFileName(file);
-	printfDx("filename[%s]\n", clang_getCString(str));
-	clang_disposeString(str);
-
 	/*ç\ï∂ÉGÉâÅ[ÇÃèÍçáÇÕâêÕÇµÇ»Ç¢*/
 	if (clang_getNumDiagnostics(unit) != 0) {
 		clang_disposeTranslationUnit(unit);
@@ -259,6 +255,11 @@ bool PrintMap(char* _filepath) {
 		_filepath, nullptr, 0,
 		nullptr, 0,
 		CXTranslationUnit_None);
+
+	file = clang_getFile(unit, _filepath);
+	CXString str = clang_getFileName(file);
+	printfDx("filename[%s]\n", clang_getCString(str));
+	clang_disposeString(str);
 
 	if (map.error) {
 		for (unsigned I = 0, N = clang_getNumDiagnostics(unit); I != N; ++I) {

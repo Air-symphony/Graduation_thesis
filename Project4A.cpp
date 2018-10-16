@@ -33,6 +33,9 @@ char FileController::log[USHRT_MAX] = "";
 char FileController::tempDirName[7] = "";
 char FileController::tempFileName[15] = "";
 char FileController::tempFilePath[7 + 15] = "";
+
+int width = 700;
+int height = 750;
 //Graph graph;
 //int FileController::fileHandle = 0;
 
@@ -72,19 +75,20 @@ void init() {
 }
 
 void FpsTimeFanction() {
+	int fps = 30;
 	if (FpsTime_i == 0)
 		FpsTime[0] = GetNowCount();               //1周目の時間取得
-	if (FpsTime_i == 29) {
+	if (FpsTime_i == fps - 1) {
 		FpsTime[1] = GetNowCount();               //30周目の時間取得
-		Fps = 1000.0f / ((FpsTime[1] - FpsTime[0]) / 50.0f);//測定した値からfpsを計算
+		Fps = 1000.0f / ((FpsTime[1] - FpsTime[0]) / (float)fps);//測定した値からfpsを計算
 		FpsTime_i = 0;//カウントを初期化
 	}
 	else {
 		FpsTime_i++;//現在何周目かカウント
 	}
-	DrawFormatString(500, 10, GetColor(255, 255, 255), "FpsTime_i[%d]", FpsTime_i); //fpsを表示
+	DrawFormatString(width / 2 - 60, 0, GetColor(255, 255, 255), "[%02d/%d]", FpsTime_i, fps); //fpsを表示
 	if (Fps != 0)
-		DrawFormatString(630, 10, GetColor(255, 255, 255), "FPS[%.1f]", Fps); //fpsを表示
+		DrawFormatString(width / 2 - 150, 0, GetColor(255, 255, 255), "FPS[%.1f]", Fps); //fpsを表示
 	return;
 }
 // 子ウインドウのプロージャ
@@ -115,7 +119,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         return FALSE;
     }
 
-	DXInit(700, 750);
+	DXInit(width, height);
 	SetLogFontSize(20);
 
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_PROJECT4A));
@@ -135,9 +139,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		ClearDrawScreen();
 		//デバッグ
 		FpsTimeFanction();
-		int Width, Height;
-		GetWindowSize(&Width, &Height);
-		printfDx("window size[%d, %d]\n", Width, Height);
+		printfDx("window size[%d, %d]\n", width, height);
 
 		//ParsingNode(FileController::GetFilepath());
 		if (!PrintMap(FileController::GetFilepath())) {
@@ -295,8 +297,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
 	case WM_SIZE:
 	{
-		int width = LOWORD(lParam);
-		int height = HIWORD(lParam);
+		width = LOWORD(lParam);
+		height = HIWORD(lParam);
 		clsDx();
 		SetWindowVisibleFlag(FALSE);//DXLib windowの削除
 		SetWindowPos(
@@ -343,9 +345,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			700, 0, 500, 700, hWnd, (HMENU)2,
 			((LPCREATESTRUCT)(lParam))->hInstance, NULL
 		);
-
+		
 		HFONT font = CreateFont(
-			25,                   // フォントの高さ(大きさ)。
+			20,                   // フォントの高さ(大きさ)。
 			0,                    // フォントの幅。普通０。
 			0,                    // 角度。０でＯＫ。
 			0,                    // 同じく角度。これも０。
@@ -361,6 +363,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			_T("Consolas") // フォントのタイプフェイス名の指定。これは見たまんま。
 		);
 		SendMessage(texthwnd, WM_SETFONT, (WPARAM)font, MAKELPARAM(FALSE, 0));
+		//Tab幅を指定
+		int tab = 16;
+		SendMessage(texthwnd, EM_SETTABSTOPS, 1, (LPARAM)&tab);
+		InvalidateRect(texthwnd, NULL, FALSE);
 	}
 	break;
 	

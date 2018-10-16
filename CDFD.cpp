@@ -247,7 +247,7 @@ public:
 			for (int i = 0; i < nodes.size();i++) {
 				nodes[i].SetNodeSize(&myDraw);
 				nodes[i].DrawNode(&myDraw,
-					100 + nodes[i].width / 2,
+					50 + nodes[i].width / 2,
 					50 + nodes[i].height / 2 + i * 10 + max - index
 				);
 				max += nodes[i].height;
