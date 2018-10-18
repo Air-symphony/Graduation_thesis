@@ -33,6 +33,7 @@ string GetCode(CXCursor cursor) {
 
 CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXClientData client_data)
 {
+	unsigned level = *(unsigned *)client_data;
 	/*clangì‡Ç≈ÇÃå^ÇÃï∂éöóÒ*/
 	CXCursorKind kind = clang_getCursorKind(cursor);
 	string clangVariableType = clang_getCString(clang_getCursorKindSpelling(kind));
@@ -79,7 +80,7 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 		cdfd = map.ChangeBeforeCDFD();
 	}
 
-	Node node(cdfd->node_id, nameRange.begin_int_data, nameRange.end_int_data, clangVariableType, codeStr, variableName);
+	Node node(cdfd->node_id, nameRange.begin_int_data, nameRange.end_int_data, clangVariableType, codeStr, variableName, level);
 
 	bool ifstmt = (kind == CXCursorKind::CXCursor_IfStmt);
 	cdfd->CheckScope(&node, ifstmt);
@@ -195,13 +196,13 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 
 	if (!cdfd->SetNodeAbility(node)) //{}
 		cdfd->AddNode(node, ifstmt);
-	
+
 	/*àÍî‘è„ÇÃäKëwÇÃÇ›Çï\é¶*/
-	if (kind == CXCursorKind::CXCursor_ClassDecl || 
+	if (kind == CXCursorKind::CXCursor_ClassDecl ||
 		kind == CXCursorKind::CXCursor_FunctionDecl ||
-		kind == CXCursorKind::CXCursor_CXXMethod || 
+		kind == CXCursorKind::CXCursor_CXXMethod ||
 		kind == CXCursorKind::CXCursor_ForStmt ||
-		kind == CXCursorKind::CXCursor_WhileStmt || 
+		kind == CXCursorKind::CXCursor_WhileStmt ||
 		kind == CXCursorKind::CXCursor_IfStmt)
 	{
 		cdfd->scopeOffset.AddOffset(nameRange.begin_int_data, nameRange.end_int_data);
@@ -214,14 +215,24 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 	else {
 		cdfd->exprOffset.AddOffset(nameRange.begin_int_data, nameRange.end_int_data);
 	}
-	
+
 	/*
 	if (kind == CXCursorKind::CXCursor_DeclRefExpr) {
 		nodes.AddVariableRelation(nodes.node_id - 1, variableName);
 	}
 	nodes.AddVariableName(nodes.node_id - 1, typeStr, variableName);
 	*/
-	return CXChildVisit_Recurse;
+	unsigned next = level + 1;
+	if (CXChildVisit_Break == clang_visitChildren(cursor, visitChildrenCallback, &next)){
+		if (kind == CXCursorKind::CXCursor_WhileStmt) {
+			map.SetCondition();
+		}
+		else if (kind == CXCursorKind::CXCursor_ForStmt) {
+
+		}
+	}
+
+	return CXChildVisit_Continue;
 }
 
 /*ç\ï∂âêÕ*/
@@ -250,9 +261,10 @@ int ParsingNode(char* _filepath)
 		return -1;
 	}
 	cdfd = map.init();
+	unsigned level = 0;
 	clang_visitChildren(clang_getTranslationUnitCursor(unit),
 		visitChildrenCallback,
-		NULL);
+		&level);
 	CDFD::debug = false;
 	map.Draw();
 	clang_disposeTranslationUnit(unit);

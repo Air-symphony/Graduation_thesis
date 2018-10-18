@@ -230,6 +230,10 @@ public:
 		}
 	}
 
+	static void CopyConditionText(CDFD* copyTo, CDFD original) {
+		Node::CopyConditionText(&copyTo->nodes[copyTo->nodes.size() - 1], original.nodes[0]);
+	}
+
 	/*‹ï‘Ì‰»‚³‚ê‚éCDFD‚ÌID‚ðnode‚Éset*/
 	void SetConcreteCDFD(int id) {
 		nodes[node_id - 1].SetconcreteCDFD_id(id);

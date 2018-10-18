@@ -32,8 +32,9 @@ public:
 	string variableName;
 	/*‹ï‘Ì‰»‚³‚ê‚éCDFD‚ÌID*/
 	int concreteCDFD_id;
+	unsigned level;
 
-	Node(int _id, int _begin, int _end, string _type, string _text, string _variableName) {
+	Node(int _id, int _begin, int _end, string _type, string _text, string _variableName, unsigned _level = 0) {
 		width = height = 0;
 		id = _id;
 		scope = state = -1;
@@ -42,6 +43,7 @@ public:
 		text = _text;
 		variableName = _variableName;
 		concreteCDFD_id = -1;
+		level = _level;
 		processType = ProcessType::NORMAL;
 		for (int i = (int)block.size(); i > 0; i--) {
 			block.pop_back();
@@ -101,6 +103,21 @@ public:
 		return true;
 	}
 
+	static bool CopyConditionText(Node* copyTo, Node original) {
+		switch (copyTo->processType)
+		{
+		case FORLOOP:
+			copyTo->text = "For_" + to_string(copyTo->concreteCDFD_id) + "\n(" + original.text + ")";
+			break;
+		case WHILELOOP:
+			copyTo->text = "While_" + to_string(copyTo->concreteCDFD_id) + "\n(" + original.text + ")";
+			break;
+		default:
+			break;
+		}
+		return true;
+	}
+
 	bool ChangeProcessType(ProcessType _type) {
 		processType = _type;
 		return true;
@@ -108,17 +125,6 @@ public:
 
 	bool SetconcreteCDFD_id(int id) {
 		concreteCDFD_id = id;
-		switch (processType)
-		{
-		case FORLOOP:
-			text = "For_" + to_string(concreteCDFD_id) + "\n(" + text + ")";
-			break;
-		case WHILELOOP:
-			text = "While_" + to_string(concreteCDFD_id) + "\n(" + text + ")";
-			break;
-		default:
-			break;
-		}
 		return true;
 	}
 
@@ -135,7 +141,7 @@ public:
 		for (int i = 0; i < state; i++) {
 			str += ">";
 		}
-		str += to_string(id) + " : " + "(" + to_string(offset.begin) + " - " + to_string(offset.end) + ")";
+		str += to_string(id) + " : " + to_string(level) + "(" + to_string(offset.begin) + " - " + to_string(offset.end) + ")";
 		str += variableName + " ";
 		str += ":" + to_string(concreteCDFD_id) + ": ";
 		str += "<" + type + ">";
