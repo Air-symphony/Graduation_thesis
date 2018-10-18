@@ -44,7 +44,6 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 	CXType clangType = clang_getCursorType(cursor);
 	string typeStr = clang_getCString(clang_getTypeSpelling(clangType));
 
-	//CXString str = clang_getCursorSpelling(cursor);
 	//CXCursor parentTest = clang_getCursorSemanticParent(cursor);
 	//CXSourceRange test = clang_getCursorExtent(cursor);
 	CXSourceRange nameRange = clang_getCursorReferenceNameRange(cursor, CXNameRange_WantQualifier, 0);
@@ -77,7 +76,7 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 	}
 	/*cdfd‚ÌØ‚è‘Ö‚¦*/
 	if (map.CheckNodeInOffset(nameRange.begin_int_data, nameRange.end_int_data)) {
-		cdfd = map.SetCDFD();
+		cdfd = map.ChangeBeforeCDFD();
 	}
 
 	Node node(cdfd->node_id, nameRange.begin_int_data, nameRange.end_int_data, clangVariableType, codeStr, variableName);
@@ -173,20 +172,22 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 	}
 	/*for•¶‚Ìê‡*/
 	else if (kind == CXCursorKind::CXCursor_ForStmt) {
-		node.ChangeProcessType(ProcessType::LOOP);
+		node.ChangeProcessType(ProcessType::FORLOOP);
 	}
 	/*while•¶‚Ìê‡*/
 	else if (kind == CXCursorKind::CXCursor_WhileStmt) {
-		node.ChangeProcessType(ProcessType::LOOP);
+		node.ChangeProcessType(ProcessType::WHILELOOP);
 	}
+
 	/*if(),else if()‚È‚Ç‚ÌðŒŽ®‚Ì‰ñŽû*/
 	if (cdfd->getConditionFlag) {
 		cdfd->SetText_PreNode(node);
 		cdfd->DeclLock = cdfd->getConditionFlag = false;
 	}
 	/*ŽŸŽ®‚ÌðŒŽ®‚ðŽæ‚èž‚Þ‚½‚ß*/
-	if (kind == CXCursorKind::CXCursor_IfStmt ||
-		kind == CXCursorKind::CXCursor_WhileStmt) {
+	if (kind == CXCursorKind::CXCursor_IfStmt
+		//|| kind == CXCursorKind::CXCursor_WhileStmt
+		) {
 		cdfd->Save_id_state_scope(node.state, node.scope);
 		cdfd->DeclLock = cdfd->getConditionFlag = true;
 	}

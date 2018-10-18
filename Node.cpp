@@ -9,7 +9,8 @@ enum ProcessType {
 	NORMAL,
 	BRANCH_STANDARD,
 	BRANCH_DEFAULT,
-	LOOP,
+	FORLOOP,
+	WHILELOOP
 };
 
 class Node {
@@ -86,8 +87,38 @@ public:
 		return false;
 	}
 
+	static bool CopyVariableInOut(Node* copyTo, Node original) {
+		for (int i = 0; i < original.input.size(); i++) {
+			copyTo->AddInput(original.input[i]);
+		}
+		if (original.type != "VarDecl" &&
+			original.type != "FieldDecl" &&
+			original.type != "ParmDecl") {
+			for (int i = 0; i < original.output.size(); i++) {
+				copyTo->AddOutput(original.output[i]);
+			}
+		}
+		return true;
+	}
+
 	bool ChangeProcessType(ProcessType _type) {
 		processType = _type;
+		return true;
+	}
+
+	bool SetconcreteCDFD_id(int id) {
+		concreteCDFD_id = id;
+		switch (processType)
+		{
+		case FORLOOP:
+			text = "For_" + to_string(concreteCDFD_id) + "\n(" + text + ")";
+			break;
+		case WHILELOOP:
+			text = "While_" + to_string(concreteCDFD_id) + "\n(" + text + ")";
+			break;
+		default:
+			break;
+		}
 		return true;
 	}
 
@@ -141,9 +172,15 @@ public:
 			width = myDraw->GetTextWidth(text) + (process_LeftGraph.sizeX + process_RightGraph.sizeX);
 			height = branchProcess_DefaultGraph.sizeY;
 			break;
-		case LOOP:
+		case FORLOOP:
+		case WHILELOOP:
 			width = myDraw->GetTextWidth(text) + (process_LeftGraph.sizeX + loopProcess_RightGraph.sizeX);
-			height = processGraph.sizeY;
+			if (processGraph.sizeY < myDraw->GetTextHeight() * 2) {
+				height = myDraw->GetTextHeight() * 2;
+			}
+			else {
+				height = processGraph.sizeY;
+			}
 			break;
 		default:
 			break;
@@ -165,22 +202,26 @@ public:
 			processGraph.DrawExtend(x, y, width, height);
 			process_LeftGraph.DrawExtend(x - width / 2, y, process_LeftGraph.sizeX, height, 6);
 			process_RightGraph.DrawExtend(x + width / 2, y, process_RightGraph.sizeX, height, 4);
+			myDraw->Draw_String_Black(x, y, text);
 			break;
 		case BRANCH_STANDARD:
 			branchProcess_StandardGraph.DrawExtend(x, y, width, height);
+			myDraw->Draw_String_Black(x, y, text);
 			break;
 		case BRANCH_DEFAULT:
 			branchProcess_DefaultGraph.DrawExtend(x, y, width, height);
+			myDraw->Draw_String_Black(x, y, text);
 			break;
-		case LOOP:
+		case FORLOOP:
+		case WHILELOOP:
 			processGraph.DrawExtend(x, y, width, height);
 			process_LeftGraph.DrawExtend(x - width / 2, y, process_LeftGraph.sizeX, height, 6);
 			loopProcess_RightGraph.DrawExtend(x + width / 2, y, loopProcess_RightGraph.sizeX, height, 4);
+			myDraw->Draw_String_Black(x, y, text, 8);
 			break;
 		default:
 			break;
 		}
-		myDraw->Draw_String_Black(x, y, text);
 
 		int inoutPos = 10;
 		for (int i = 0; i < inputSize; i++) {

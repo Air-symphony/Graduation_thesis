@@ -22,7 +22,7 @@ public:
 	static char log[USHRT_MAX];
 
 	static bool init() {
-		SetFilePath("TestCode\\ifStmt.cpp");
+		SetFilePath("TestCode\\whileStmt.cpp");
 		strcpy_s(tempDirName, "./temp");
 		strcpy_s(tempFileName, "/tempfile.cpp");
 

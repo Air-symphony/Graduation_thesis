@@ -70,8 +70,14 @@ public:
 	}
 
 	/*abstractCDFD_ids‚ÌÅŒã”öID‚©‚çCDFD‚Ìæ“¾*/
-	CDFD* SetCDFD() {
+	CDFD* ChangeBeforeCDFD() {
+		//’ŠÛ‰»‚³‚ê‚½CDFD
 		int id = abstractCDFD_ids[abstractCDFD_ids.size() - 1];
+		CDFD* cdfd = &map[id];
+		//‹ï‘Ì‰»‚³‚ê‚½CDFD
+		CDFD correntCDFD = map[map.size() - 1];
+		CDFD::CopyVariableInOut(cdfd, correntCDFD);
+
 		return &map[id];
 	}
 

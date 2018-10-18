@@ -224,10 +224,15 @@ public:
 		return true;
 	}
 
+	static void CopyVariableInOut(CDFD* copyTo, CDFD original) {
+		for (int i = 0; i < original.nodes.size(); i++) {
+			Node::CopyVariableInOut(&copyTo->nodes[copyTo->nodes.size() - 1], original.nodes[i]);
+		}
+	}
 
 	/*‹ï‘Ì‰»‚³‚ê‚éCDFD‚ÌID‚ðnode‚Éset*/
 	void SetConcreteCDFD(int id) {
-		nodes[node_id - 1].concreteCDFD_id = id;
+		nodes[node_id - 1].SetconcreteCDFD_id(id);
 	}
 
 	int AddVariableName(int _id, string type, string variable) {
