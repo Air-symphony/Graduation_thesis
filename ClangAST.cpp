@@ -266,6 +266,7 @@ int ParsingNode(char* _filepath)
 		visitChildrenCallback,
 		&level);
 	CDFD::debug = false;
+	map.SetPosition();
 	map.Draw();
 	clang_disposeTranslationUnit(unit);
 	clang_disposeIndex(index);

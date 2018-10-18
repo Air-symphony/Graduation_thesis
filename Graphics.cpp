@@ -2,6 +2,8 @@
 #include "DxLib.h"
 #include <string>
 
+#define PI    3.1415926535897932384626433832795f
+
 /*
 ‰æ‘œ•\Ž¦ŠÖŒW
 int graphID;
@@ -78,6 +80,15 @@ public:
 			DrawExtendGraph(x - width / 2, y - height, x + width / 2, y, graphID, TRUE);
 		else if (number == 9)
 			DrawExtendGraph(x - width, y - height, x, y, graphID, TRUE);
+	}
+	void DrawArrowBase(int input_x, int input_y, double ratex, double angle) {
+		DrawRotaGraph3(input_x, input_y,
+			0, sizeY / 2, ratex, 1.0f,
+			angle, graphID, TRUE);
+	}
+
+	void DrawArrowTip(int output_x, int output_y, double ratex, double angle) {
+		DrawRotaGraph2(output_x, output_y, 0, sizeY / 2, 0.3f, angle + PI, graphID, TRUE);
 	}
 };
 

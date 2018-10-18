@@ -1,5 +1,4 @@
 #pragma once
-#include "Arrow.cpp"
 #include "Node.cpp"
 
 enum Command{
@@ -13,16 +12,19 @@ private:
 	/*Nodeのまとめ*/
 	vector<Node> nodes;
 	/*変数リスト*/
+	/*
 	vector<string> variableType;
 	vector<string> variableName;
 	vector<vector<int>> variableRelation;
+	*/
+	vector<int> maxWidthList;
 	/*Debugモード切替*/
 	bool ChangeDebugMode() {
 		if (CheckHitKey(KEY_INPUT_SPACE) != 0) {
 			count++;
 			if (count == 1) {
 				debug = !debug;
-				index = 0;
+				cursor_x = 0;
 			}
 		}
 		else {
@@ -34,22 +36,22 @@ private:
 	int getDebugSize(){
 		int range = 25;
 		if (CheckHitKey(KEY_INPUT_UP) != 0) {
-			if (index > 0) {
-				index--;
+			if (cursor_x > 0) {
+				cursor_x--;
 			}
 		}
 		else if (CheckHitKey(KEY_INPUT_DOWN) != 0) {
-			if (index < nodes.size() - range) {
-				index++;
+			if (cursor_x < nodes.size() - range) {
+				cursor_x++;
 			}
 		}
 		printfDx("[%d]\n", nodes.size());
 
-		int size = index + range;
+		int size = cursor_x + range;
 		if (nodes.size() < size) {
 			size = (int)nodes.size();
-			index = size - range;
-			if (index < 0) index = 0;
+			cursor_x = size - range;
+			if (cursor_x < 0) cursor_x = 0;
 		}
 		return size;
 	}
@@ -57,7 +59,8 @@ public:
 	/*CDFDの番号*/
 	int cdfd_id;
 	/*Debug*/
-	int index = 0, count = 0;
+	int cursor_x = 0, cursor_y = 0;
+	int count = 0;
 	static bool debug;
 
 	int node_id = 0;
@@ -87,14 +90,19 @@ public:
 		for (i = (int)nodes.size(); i > 0; i--) {
 			nodes.pop_back();
 		}
+		/*
 		for (i = (int)variableName.size(); i > 0; i--) {
 			variableName.pop_back();
 		}
 		for (i = (int)variableRelation.size(); i > 0; i--) {
 			variableRelation.pop_back();
 		}
+		*/
 		for (i = (int)scopeOffset_nodeId.size(); i > 0; i--) {
 			scopeOffset_nodeId.pop_back();
+		}
+		for (i = (int)maxWidthList.size(); i > 0; i--) {
+			maxWidthList.pop_back();
 		}
 		scopeOffset.init();
 		exprOffset.init();
@@ -238,7 +246,7 @@ public:
 	void SetConcreteCDFD(int id) {
 		nodes[node_id - 1].SetconcreteCDFD_id(id);
 	}
-
+	/*
 	int AddVariableName(int _id, string type, string variable) {
 		if (variable == "") return 0;
 
@@ -260,10 +268,24 @@ public:
 				return -1;
 			}
 			variableRelation[index].push_back(_id);
-			//nodes[_id - 1].SetDefIndex(variableRelation[index][0]);
+			//nodes[_id - 1].SetDefIndex(variableRelation[cursor_x][0]);
 			return 1;
 		}
 		return 0;
+	}
+	*/
+
+	void SetPosition() {
+		Node::SetGraph();
+		Arrow::SetGraph();
+		MyDrawString myDraw(15);
+		maxWidthList.push_back(50);
+		for (int i = 0; i < nodes.size(); i++) {
+			nodes[i].SetNodeSize(&myDraw);
+			nodes[i].SetPosX(nodes);
+			nodes[i].SetPosY(nodes);
+			maxWidthList[nodes[i].pos.x] = nodes[i].GetWidth(&maxWidthList);
+		}
 	}
 
 	/*マップの表示*/
@@ -276,7 +298,7 @@ public:
 		ChangeDebugMode();
 		if (debug) {
 			int size = getDebugSize();
-			for (int i = index; i < size; i++) {
+			for (int i = cursor_x; i < size; i++) {
 				printfDx(nodes[i].DrawNode().c_str());
 			}
 			printfDx("\n");
@@ -294,28 +316,37 @@ public:
 		}
 		else {
 			Node::SetGraph();
+			Arrow::SetGraph();
 			MyDrawString myDraw(15);
-			int max = 0;
+			int max_x = 0, max_y = 0;
 			for (int i = 0; i < nodes.size();i++) {
-				nodes[i].SetNodeSize(&myDraw);
-				nodes[i].DrawNode(&myDraw,
-					50 + nodes[i].width / 2,
-					50 + nodes[i].height / 2 + i * 10 + max - index
-				);
-				max += nodes[i].height;
+				nodes[i].DrawArrow(&maxWidthList, cursor_x, cursor_y, &myDraw, nodes);
+				nodes[i].DrawNode(&maxWidthList, cursor_x, cursor_y, &myDraw);
+				max_x += nodes[i].width;
+				max_y += nodes[i].height;
 			}
 
 			if (CheckHitKey(KEY_INPUT_UP) != 0) {
-				if (index > 0) {
-					index -= 10;
+				if (cursor_y > 0) {
+					cursor_y -= 10;
 				}
 			}
 			else if (CheckHitKey(KEY_INPUT_DOWN) != 0) {
-				if (index < max) {
-					index += 10;
+				if (cursor_y < max_y) {
+					cursor_y += 10;
 				}
 			}
-			printfDx("[%d]\n", index);
+			if (CheckHitKey(KEY_INPUT_LEFT) != 0) {
+				if (cursor_x > 0) {
+					cursor_x -= 10;
+				}
+			}
+			else if (CheckHitKey(KEY_INPUT_RIGHT) != 0) {
+				if (cursor_x < max_x) {
+					cursor_x += 10;
+				}
+			}
+			printfDx("[%d/%d, %d/%d]\n", cursor_x, max_x, cursor_y, max_y);
 		}
 		return true;
 	}

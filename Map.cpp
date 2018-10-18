@@ -7,14 +7,16 @@ private:
 	int debugID;
 	/*Debug*/
 	int getDebugdebugID() {
-		if (CheckHitKey(KEY_INPUT_LEFT) != 0) {
-			if (debugID > 0) {
-				debugID--;
+		if (CheckHitKey(KEY_INPUT_LSHIFT) != 0) {
+			if (CheckHitKey(KEY_INPUT_LEFT) != 0) {
+				if (debugID > 0) {
+					debugID--;
+				}
 			}
-		}
-		else if (CheckHitKey(KEY_INPUT_RIGHT) != 0) {
-			if (debugID < map.size() - 1) {
-				debugID++;
+			else if (CheckHitKey(KEY_INPUT_RIGHT) != 0) {
+				if (debugID < map.size() - 1) {
+					debugID++;
+				}
 			}
 		}
 		printfDx("[%d/%d]\n", map[debugID].cdfd_id, map.size() - 1);
@@ -99,6 +101,12 @@ public:
 			return true;
 		}
 		return false;
+	}
+
+	void SetPosition() {
+		for (int i = 0; i < map.size(); i++) {
+			map[i].SetPosition();
+		}
 	}
 
 	bool Draw() {
