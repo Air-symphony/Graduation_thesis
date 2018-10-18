@@ -115,8 +115,9 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 		cdfd->DeclLock = cdfd->inputFlag = cdfd->compoundAssignFlag = true;
 	}
 	/*i+=a�̏ڍׂȂ�*/
-	else if (kind == CXCursorKind::CXCursor_MemberRefExpr &&
-		cdfd->compoundAssignFlag) {
+	else if ((kind == CXCursorKind::CXCursor_MemberRefExpr || kind == CXCursorKind::CXCursor_DeclRefExpr)
+		&& cdfd->compoundAssignFlag
+		) {
 		cdfd->AddInOut_PreNode(node, Command::INOUTPUT);
 		cdfd->compoundAssignFlag = false;
 	}
