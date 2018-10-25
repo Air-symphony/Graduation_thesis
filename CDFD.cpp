@@ -175,8 +175,7 @@ public:
 		preState = state;
 		preScope = scope;
 	}
-	/*
-	command = INPUT_, OUTPUT, INOUTPUT*/
+	/*command = INPUT_, OUTPUT, INOUTPUT*/
 	bool AddInOut_PreNode(Node node, Command command) {
 		switch (command) {
 		case Command::INPUT_: 
@@ -275,6 +274,7 @@ public:
 	}
 	*/
 
+	/*ƒm[ƒh‚ÌˆÊ’uŠÖŒW‚ðŒˆ‚ß‚é*/
 	void SetPosition() {
 		Node::SetGraph();
 		Arrow::SetGraph();
@@ -326,24 +326,25 @@ public:
 				max_y += nodes[i].height;
 			}
 
+			int speed = 20;
 			if (CheckHitKey(KEY_INPUT_UP) != 0) {
 				if (cursor_y > 0) {
-					cursor_y -= 10;
+					cursor_y -= speed;
 				}
 			}
 			else if (CheckHitKey(KEY_INPUT_DOWN) != 0) {
 				if (cursor_y < max_y) {
-					cursor_y += 10;
+					cursor_y += speed;
 				}
 			}
 			if (CheckHitKey(KEY_INPUT_LEFT) != 0) {
 				if (cursor_x > 0) {
-					cursor_x -= 10;
+					cursor_x -= speed;
 				}
 			}
 			else if (CheckHitKey(KEY_INPUT_RIGHT) != 0) {
 				if (cursor_x < max_x) {
-					cursor_x += 10;
+					cursor_x += speed;
 				}
 			}
 			printfDx("[%d/%d, %d/%d]\n", cursor_x, max_x, cursor_y, max_y);

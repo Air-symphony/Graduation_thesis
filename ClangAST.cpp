@@ -93,6 +93,7 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 	{
 		node.AddOutput(variableName);
 		cdfd->Save_id_state_scope(node.state, node.scope);
+		cdfd->inputFlag = true;
 		cdfd->DeclLock = true;
 	}
 	/*ŠÖ”,ƒƒ“ƒoŠÖ”éŒ¾*/

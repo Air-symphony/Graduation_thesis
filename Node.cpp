@@ -36,19 +36,23 @@ private:
 	string type;
 	vector<string> output;
 	vector<string> input;
+	/*inputの変数を受け付ける、送信元のノードIDリスト*/
 	vector<int> connectNodeID;
+	/*分岐構造での実行するノードID*/
 	vector<int> block;
 	ProcessType processType;
 public:
 	int id;
-	Pos pos;
-	int width, height;
 	string text;
 	Offset offset;
 	int scope, state;
 	string variableName;
 	/*具体化されるCDFDのID*/
 	int concreteCDFD_id;
+	/*CDFD上でのマス目の座標*/
+	Pos pos;
+	/*ノードのサイズ*/
+	int width, height;
 	//unsigned level;
 
 	Node(int _id, int _begin, int _end, string _type, string _text, string _variableName, unsigned _level = 0) {
@@ -61,13 +65,13 @@ public:
 		text = _text;
 		variableName = _variableName;
 		concreteCDFD_id = -1;
-		//level = _level;
 		processType = ProcessType::NORMAL;
 		for (int i = (int)block.size(); i > 0; i--) {
 			block.pop_back();
 		}
 	}
 
+	/*画像素材の準備*/
 	static void SetGraph() {
 		Node::processGraph.SetGraph(LoadGraph("picture\\Process.png"));
 		Node::process_LeftGraph.SetGraph(LoadGraph("picture\\Process_Left.png"));
@@ -121,6 +125,9 @@ public:
 		return true;
 	}
 
+	/**For、Whileに合わせて、テキストを変更する
+	*type + concreteCDFD_id + "\n(" + text + ")"
+	*/
 	static bool CopyConditionText(Node* copyTo, Node original) {
 		switch (copyTo->processType)
 		{
@@ -161,8 +168,8 @@ public:
 		}
 		str += to_string(id) + " : " + "(" + to_string(offset.begin) + " - " + to_string(offset.end) + ")";
 		//str += variableName + " ";
-		//str += ":" + to_string(concreteCDFD_id) + ": ";
-		//str += "<" + type + ">";
+		str += ":" + to_string(concreteCDFD_id) + ": ";
+		str += "<" + type + ">";
 		str += "[" + text + "]";
 
 		for (int i = 0; i < (int)connectNodeID.size(); i++) {
@@ -216,18 +223,20 @@ public:
 		default:
 			break;
 		}
+		int inputSize = (int)input.size(), outputSize = (int)output.size();
+		int limitSize = 3;
+		if (limitSize < inputSize || limitSize < outputSize) {
+			int size = (inputSize < outputSize) ? outputSize : inputSize;
+			height += myDraw->GetTextHeight() * (size - limitSize);
+		}
 	}
 	
 	int GetPosX(vector<int>* maxWidthList) {
 		int x = maxWidthList->at(0);
-		for (int i = 1; i <= pos.x; i++) {
-			if (i == pos.x) {
-				x += maxWidthList->at(i) / 2;
-			}
-			else {
-				x += maxWidthList->at(i) + 100;
-			}
+		for (int i = 1; i < pos.x; i++) {
+			x += maxWidthList->at(i) + 100;
 		}
+		x += maxWidthList->at(pos.x) / 2;
 		return x;
 	}
 
@@ -269,27 +278,26 @@ public:
 		return true;
 	}
 
-	/*変数の矢印を描画*/
+	/**変数の矢印を描画
+	*connectNodeIDリストinput変数を見比べ
+	*
+	*/
 	bool DrawArrow(vector<int>* maxWidthList, int cursor_x, int cursor_y, MyDrawString* myDraw, vector<Node> nodes) {
-		int inputSize = (int)input.size(), outputSize = (int)output.size();
-		int limitSize = 3;
-		if (limitSize < inputSize || limitSize < outputSize) {
-			int size = (inputSize < outputSize) ? outputSize : inputSize;
-			height += myDraw->GetTextHeight() * (size - limitSize);
-		}
-
-		int inoutPos = 20;
-		for (int inIndex = 0; inIndex < (int)connectNodeID.size(); inIndex++) {
-			vector<string> connectOutput = nodes[connectNodeID[inIndex]].output;
-			int size = (int)connectOutput.size();
+		int inputSize = (int)input.size();
+		
+		int inoutPos = 10;
+		int connectSize = (int)connectNodeID.size();
+		for (int inIndex = 0; inIndex < connectSize; inIndex++) {
+			Node* node = &nodes[connectNodeID[inIndex]];
+			vector<string>* connectOutput = &node->output;
+			int size = (int)connectOutput->size();
 			int output_x = 0, output_y = 0;
 			for (int outIndex = 0; outIndex < size; outIndex++) {
-				if (connectOutput[outIndex] == input[inIndex]) {
-					Node* node = &nodes[connectNodeID[inIndex]];
+				if (connectOutput->at(outIndex) == input[inIndex]) {
 					int dy = node->height / (int)(size + 1);
 					output_x = node->GetPosX(maxWidthList) + node->width / 2 - cursor_x;
 					output_y = node->GetPosY() - node->height / 2 + dy * (outIndex + 1) - cursor_y;
-					myDraw->Draw_String_White(output_x + inoutPos, output_y - inoutPos, connectOutput[outIndex], 4);
+					myDraw->Draw_String_White(output_x + inoutPos, output_y - inoutPos, connectOutput->at(outIndex), 4);
 					break;
 				}
 			}
@@ -313,6 +321,7 @@ public:
 		return true;
 	}
 
+	/*自身のinput変数が、自分以前のどのプロセスで更新されているか*/
 	bool SetPosX(vector<Node> nodes) {
 		bool check = false;
 		for (int inIndex = 0; inIndex < (int)input.size(); inIndex++) {
@@ -333,6 +342,7 @@ public:
 		}
 		return check;
 	}
+	/*自分以前かつ同じ横軸のプロセスに対し、最大の縦軸+1を自身の位置にする*/
 	void SetPosY(vector<Node> nodes) {
 		for (int nodeID = id - 1; nodeID >= 0; nodeID--) {
 			if (pos.x == nodes[nodeID].pos.x) {
@@ -341,8 +351,9 @@ public:
 			}
 		}
 	}
+	/*横幅の中で最大の値を返す*/
 	int GetWidth(vector<int>* maxWidthList) {
-		for (int i = maxWidthList->size() - 1; i < pos.x; i++) {
+		for (int i = (int)maxWidthList->size() - 1; i < pos.x; i++) {
 			maxWidthList->push_back(0);
 		}
 		if (maxWidthList->at(pos.x) < width) {

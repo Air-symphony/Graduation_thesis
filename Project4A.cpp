@@ -326,7 +326,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			height,                 // 高さ
 			NULL//SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED             // ウインドウ位置のオプション
 		);
-
 	}
 		break;
 	case WM_CREATE:
