@@ -62,7 +62,7 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 		return CXChildVisit_Recurse;
 	}
 	if (kind == CXCursorKind::CXCursor_CompoundStmt ||
-		kind == CXCursorKind::CXCursor_ForStmt ||
+		//kind == CXCursorKind::CXCursor_ForStmt ||
 		kind == CXCursorKind::CXCursor_WhileStmt
 		//kind == CXCursorKind::CXCursor_IfStmt ||
 		)
@@ -79,7 +79,8 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 	if (map.CheckNodeInOffset(nameRange.begin_int_data, nameRange.end_int_data)) {
 		cdfd = map.ChangeBeforeCDFD();
 	}
-
+	/*初期式、条件式、更新式の有無*/
+	bool forCheckStmt[3] = { false,false,false };
 	Node node(cdfd->node_id, nameRange.begin_int_data, nameRange.end_int_data, clangVariableType, codeStr, variableName, level);
 
 	bool ifstmt = (kind == CXCursorKind::CXCursor_IfStmt);
@@ -175,6 +176,29 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 	}
 	/*for文の場合*/
 	else if (kind == CXCursorKind::CXCursor_ForStmt) {
+		char separator = ';', escapeChar = ' ';
+		char keys[2] = { '(', ')' };
+		int keysCount = 0, checkCount = 0;
+		bool check = false;
+		for (int i = 0; i < codeStr.size(); ++i) {
+			char target = codeStr[i];
+			if (target == keys[keysCount]) {
+				keysCount++;
+				if (keysCount == 2) {
+					forCheckStmt[checkCount] = check;
+					break;
+				}
+				check = false;
+			}
+			else if (target == separator) {
+				forCheckStmt[checkCount] = check;
+				checkCount++;
+				check = false;
+			}
+			else if (target != escapeChar){
+				check = true;
+			}
+		}
 		node.ChangeProcessType(ProcessType::FORLOOP);
 	}
 	/*while文の場合*/
@@ -225,11 +249,12 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 	*/
 	unsigned next = level + 1;
 	if (CXChildVisit_Break == clang_visitChildren(cursor, visitChildrenCallback, &next)){
+		map.CheckNodeInOffset(nameRange.begin_int_data, nameRange.end_int_data);
 		if (kind == CXCursorKind::CXCursor_WhileStmt) {
 			map.SetCondition();
 		}
 		else if (kind == CXCursorKind::CXCursor_ForStmt) {
-
+			map.SetCondition(forCheckStmt);
 		}
 	}
 

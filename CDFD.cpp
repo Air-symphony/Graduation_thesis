@@ -233,12 +233,36 @@ public:
 
 	static void CopyVariableInOut(CDFD* copyTo, CDFD original) {
 		for (int i = 0; i < original.nodes.size(); i++) {
-			Node::CopyVariableInOut(&copyTo->nodes[copyTo->nodes.size() - 1], original.nodes[i]);
+			copyTo->nodes[copyTo->nodes.size() - 1].CopyVariableInOut(original.nodes[i]);
 		}
 	}
 
-	static void CopyConditionText(CDFD* copyTo, CDFD original) {
-		Node::CopyConditionText(&copyTo->nodes[copyTo->nodes.size() - 1], original.nodes[0]);
+	static void CopyConditionText(CDFD* copyTo, CDFD original, bool* forCondition) {
+		Node* copyNodeTo = &copyTo->nodes[copyTo->nodes.size() - 1];
+		switch (copyNodeTo->processType)
+		{
+		case FORLOOP:
+			if (forCondition == NULL) {
+				
+			}
+			else if (forCondition[1]) {
+				int index = 0;
+				if (forCondition[0]) {
+					index++;
+				}
+				Node::CopyConditionText(&copyTo->nodes[copyTo->nodes.size() - 1], original.nodes[index]);
+			}
+
+			else {
+				Node::CopyConditionText_NoCondition(&copyTo->nodes[copyTo->nodes.size() - 1]);
+			}
+			break;
+		case WHILELOOP:
+			Node::CopyConditionText(&copyTo->nodes[copyTo->nodes.size() - 1], original.nodes[0]);
+			break;
+		default:
+			break;
+		}
 	}
 
 	/*‹ï‘Ì‰»‚³‚ê‚éCDFD‚ÌID‚ðnode‚Éset*/

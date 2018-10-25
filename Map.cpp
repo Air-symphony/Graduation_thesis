@@ -78,13 +78,13 @@ public:
 		return &map[id];
 	}
 
-	void SetCondition() {
+	void SetCondition(bool* forCondition = NULL) {
 		//’ŠÛ‰»‚³‚ê‚½CDFD
 		int id = abstractCDFD_ids[abstractCDFD_ids.size() - 2];
 		//‹ï‘Ì‰»‚³‚ê‚½CDFD
-		CDFD correntCDFD = map[map.size() - 1];
+		CDFD correntCDFD = map[abstractCDFD_ids[abstractCDFD_ids.size() - 1]];
 		CDFD::CopyVariableInOut(&map[id], correntCDFD);
-		CDFD::CopyConditionText(&map[id], correntCDFD);
+		CDFD::CopyConditionText(&map[id], correntCDFD, forCondition);
 	}
 
 	/*’ŠÛ‰»‚·‚é‚×‚«”ÍˆÍ‚ğ”²‚¯‚Ä‚¢‚é‚©‚Ç‚¤‚©*/

@@ -20,8 +20,8 @@ public:
 		x = y = 0;
 	}
 	Pos(int _x, int _y) {
-		x = _x;
-		y = _y;
+x = _x;
+y = _y;
 	}
 	void SetPos(int _x, int _y) {
 		x = _x;
@@ -40,8 +40,8 @@ private:
 	vector<int> connectNodeID;
 	/*分岐構造での実行するノードID*/
 	vector<int> block;
-	ProcessType processType;
 public:
+	ProcessType processType;
 	int id;
 	string text;
 	Offset offset;
@@ -111,16 +111,32 @@ public:
 		return false;
 	}
 
-	static bool CopyVariableInOut(Node* copyTo, Node original) {
-		for (int i = 0; i < (int)original.input.size(); i++) {
-			copyTo->AddInput(original.input[i]);
+	vector<string> escapeVariable;
+	bool CopyVariableInOut(Node original) {
+		if (original.type == "VarDecl" ||
+			original.type == "FieldDecl" ||
+			original.type == "ParmDecl") {
+			escapeVariable.push_back(original.variableName);
 		}
-		if (original.type != "VarDecl" &&
-			original.type != "FieldDecl" &&
-			original.type != "ParmDecl") {
-			for (int i = 0; i < (int)original.output.size(); i++) {
-				copyTo->AddOutput(original.output[i]);
+		for (int i = 0; i < (int)original.input.size(); i++) {
+			bool check = false;
+			for (int j = 0; j < (int)escapeVariable.size(); j++) {
+				if (escapeVariable[j] == original.input[i]){
+					check = true;
+				}
 			}
+			if (!check)
+				AddInput(original.input[i]);
+		}
+		for (int i = 0; i < (int)original.output.size(); i++) {
+			bool check = false;
+			for (int j = 0; j < (int)escapeVariable.size(); j++) {
+				if (escapeVariable[j] == original.output[i]) {
+					check = true;
+				}
+			}
+			if (!check)
+				AddOutput(original.output[i]);
 		}
 		return true;
 	}
@@ -136,6 +152,21 @@ public:
 			break;
 		case WHILELOOP:
 			copyTo->text = "While_" + to_string(copyTo->concreteCDFD_id) + "\n(" + original.text + ")";
+			break;
+		default:
+			break;
+		}
+		return true;
+	}
+
+	static bool CopyConditionText_NoCondition(Node* copyTo) {
+		switch (copyTo->processType)
+		{
+		case FORLOOP:
+			copyTo->text = "For_" + to_string(copyTo->concreteCDFD_id) + "\n( )";
+			break;
+		case WHILELOOP:
+			copyTo->text = "While_" + to_string(copyTo->concreteCDFD_id) + "\n( )";
 			break;
 		default:
 			break;
@@ -288,17 +319,31 @@ public:
 		int inoutPos = 10;
 		int connectSize = (int)connectNodeID.size();
 		for (int inIndex = 0; inIndex < connectSize; inIndex++) {
-			Node* node = &nodes[connectNodeID[inIndex]];
-			vector<string>* connectOutput = &node->output;
+			Node* outputNode = &nodes[connectNodeID[inIndex]];
+			vector<string>* connectOutput = &outputNode->output;
 			int size = (int)connectOutput->size();
 			int output_x = 0, output_y = 0;
-			for (int outIndex = 0; outIndex < size; outIndex++) {
-				if (connectOutput->at(outIndex) == input[inIndex]) {
-					int dy = node->height / (int)(size + 1);
-					output_x = node->GetPosX(maxWidthList) + node->width / 2 - cursor_x;
-					output_y = node->GetPosY() - node->height / 2 + dy * (outIndex + 1) - cursor_y;
-					myDraw->Draw_String_White(output_x + inoutPos, output_y - inoutPos, connectOutput->at(outIndex), 4);
-					break;
+
+			if (outputNode->processType == FORLOOP || outputNode->processType == WHILELOOP) {
+				for (int outIndex = 0; outIndex < size; outIndex++) {
+					if (connectOutput->at(outIndex) == input[inIndex]) {
+						int dy = (outputNode->height / 2) / (int)(size + 1);
+						output_x = outputNode->GetPosX(maxWidthList) + outputNode->width / 2 - cursor_x;
+						output_y = outputNode->GetPosY() + dy * (outIndex + 1) - cursor_y;
+						myDraw->Draw_String_White(output_x + inoutPos, output_y - inoutPos, connectOutput->at(outIndex), 4);
+						break;
+					}
+				}
+			}
+			else {
+				for (int outIndex = 0; outIndex < size; outIndex++) {
+					if (connectOutput->at(outIndex) == input[inIndex]) {
+						int dy = outputNode->height / (int)(size + 1);
+						output_x = outputNode->GetPosX(maxWidthList) + outputNode->width / 2 - cursor_x;
+						output_y = outputNode->GetPosY() - outputNode->height / 2 + dy * (outIndex + 1) - cursor_y;
+						myDraw->Draw_String_White(output_x + inoutPos, output_y - inoutPos, connectOutput->at(outIndex), 4);
+						break;
+					}
 				}
 			}
 			int dy = height / (int)(inputSize + 1);
