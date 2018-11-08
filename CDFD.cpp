@@ -91,10 +91,10 @@ public:
 			nodes.pop_back();
 		}
 		/*
-		for (i = (int)variableName.size(); i > 0; i--) {
+		for (index = (int)variableName.size(); index > 0; index--) {
 			variableName.pop_back();
 		}
-		for (i = (int)variableRelation.size(); i > 0; i--) {
+		for (index = (int)variableRelation.size(); index > 0; index--) {
 			variableRelation.pop_back();
 		}
 		*/
@@ -117,6 +117,17 @@ public:
 	void CheckExpression(Node *node) {
 		int state = exprOffset.CheckOffset(node->offset);
 		node->addState(state);
+	}
+
+	void AddDateStoreNode(CDFD pre) {
+		for (int i = 0; i < pre.nodes.size(); i++) {
+			if (pre.nodes[i].CheckDeclStmt()) {
+				pre.nodes[i].processType = DATESTORE;
+				pre.nodes[i].id = node_id;
+				nodes.push_back(pre.nodes[i]);
+				node_id++;
+			}
+		}
 	}
 
 	void AddNode(Node node, bool ifstmt) {
@@ -239,6 +250,7 @@ public:
 
 	static void CopyConditionText(CDFD* copyTo, CDFD original, bool* forCondition) {
 		Node* copyNodeTo = &copyTo->nodes[copyTo->nodes.size() - 1];
+		int index = 0;
 		switch (copyNodeTo->processType)
 		{
 		case FORLOOP:
@@ -246,19 +258,25 @@ public:
 				
 			}
 			else if (forCondition[1]) {
-				int index = 0;
+				for (index = 0; index < original.nodes.size(); index++) {
+					if (original.nodes[index].processType != DATESTORE)
+						break;
+				}
 				if (forCondition[0]) {
 					index++;
 				}
 				Node::CopyConditionText(&copyTo->nodes[copyTo->nodes.size() - 1], original.nodes[index]);
 			}
-
 			else {
 				Node::CopyConditionText_NoCondition(&copyTo->nodes[copyTo->nodes.size() - 1]);
 			}
 			break;
 		case WHILELOOP:
-			Node::CopyConditionText(&copyTo->nodes[copyTo->nodes.size() - 1], original.nodes[0]);
+			for (index = 0; index < original.nodes.size(); index++) {
+				if (original.nodes[index].processType != DATESTORE)
+					break;
+			}
+			Node::CopyConditionText(&copyTo->nodes[copyTo->nodes.size() - 1], original.nodes[index]);
 			break;
 		default:
 			break;
@@ -328,11 +346,11 @@ public:
 			printfDx("\n");
 			
 			/*
-			for (int i = 0; i < variableName.size(); ++i) {
-				printfDx("%s ", variableType[i].c_str());
-				printfDx("%s => [", variableName[i].c_str());
-				for (int j = 0; j < variableRelation[i].size(); j++) {
-					printfDx("%d, ", variableRelation[i][j]);
+			for (int index = 0; index < variableName.size(); ++index) {
+				printfDx("%s ", variableType[index].c_str());
+				printfDx("%s => [", variableName[index].c_str());
+				for (int j = 0; j < variableRelation[index].size(); j++) {
+					printfDx("%d, ", variableRelation[index][j]);
 				}
 				printfDx("]\n");
 			}

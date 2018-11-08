@@ -60,8 +60,10 @@ public:
 		scope = scopeOffset.CheckOffset(begin, end) + 1;
 		scopeOffset.AddOffset(begin, end);
 		int id = (int)map.size();
-		abstractCDFD_ids.push_back(id);
+		int abstractCDFD_id = abstractCDFD_ids[abstractCDFD_ids.size() - 1];
 		CDFD cdfd(id);
+		cdfd.AddDateStoreNode(map[abstractCDFD_id]);
+		abstractCDFD_ids.push_back(id);
 		map.push_back(cdfd);
 		return &map[id];
 	}

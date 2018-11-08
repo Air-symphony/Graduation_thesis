@@ -8,6 +8,8 @@ Graph Arrow::arrowBase, Arrow::arrowTip;
 Graph Node::processGraph, Node::process_LeftGraph, Node::process_RightGraph;
 Graph Node::loopProcess_RightGraph;
 Graph Node::branchProcess_StandardGraph, Node::branchProcess_DefaultGraph;
+Graph Node::dateStore_Name, Node::dateStore_Number;
+string type;
 bool CDFD::debug;
 CXFile file;
 Map map;

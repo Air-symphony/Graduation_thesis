@@ -10,7 +10,8 @@ enum ProcessType {
 	BRANCH_STANDARD,
 	BRANCH_DEFAULT,
 	FORLOOP,
-	WHILELOOP
+	WHILELOOP,
+	DATESTORE
 };
 
 class Pos {
@@ -33,6 +34,7 @@ private:
 	static Graph processGraph, process_LeftGraph, process_RightGraph;
 	static Graph loopProcess_RightGraph;
 	static Graph branchProcess_StandardGraph, branchProcess_DefaultGraph;
+	static Graph dateStore_Name, dateStore_Number;
 	string type;
 	vector<string> output;
 	vector<string> input;
@@ -79,6 +81,8 @@ public:
 		Node::loopProcess_RightGraph.SetGraph(LoadGraph("picture\\Process_Right_Loop.png"));
 		Node::branchProcess_StandardGraph.SetGraph(LoadGraph("picture\\BranchProcess_Standard.png"));
 		Node::branchProcess_DefaultGraph.SetGraph(LoadGraph("picture\\BranchProcess_Default.png"));
+		Node::dateStore_Name.SetGraph(LoadGraph("picture\\DateStore_Name.png"));
+		Node::dateStore_Number.SetGraph(LoadGraph("picture\\DateStore_Number.png"));
 	}
 
 	void addScope(int _scope) {
@@ -111,12 +115,18 @@ public:
 		return false;
 	}
 
+	bool CheckDeclStmt() {
+		return type == "VarDecl" || type == "FieldDecl";
+	}
+
 	vector<string> escapeVariable;
 	bool CopyVariableInOut(Node original) {
-		if (original.type == "VarDecl" ||
-			original.type == "FieldDecl" ||
-			original.type == "ParmDecl") {
-			escapeVariable.push_back(original.variableName);
+		if (original.processType != DATESTORE) {
+			if (original.type == "VarDecl" ||
+				original.type == "FieldDecl" ||
+				original.type == "ParmDecl") {
+				escapeVariable.push_back(original.variableName);
+			}
 		}
 		for (int i = 0; i < (int)original.input.size(); i++) {
 			bool check = false;
@@ -251,6 +261,9 @@ public:
 				height = processGraph.sizeY;
 			}
 			break;
+		case DATESTORE:
+			width = myDraw->GetTextWidth(text) + (process_LeftGraph.sizeX + process_RightGraph.sizeX);
+			height = dateStore_Name.sizeY;
 		default:
 			break;
 		}
@@ -300,6 +313,11 @@ public:
 			loopProcess_RightGraph.DrawExtend(x + width / 2, y, loopProcess_RightGraph.sizeX, height, 5);
 			myDraw->Draw_String_Black(x, y, text, 8);
 			break;
+		case DATESTORE:
+			dateStore_Name.DrawExtend(x, y, width, height);
+			dateStore_Number.DrawExtend(x - width / 2, y, dateStore_Number.sizeX, height, 6);
+			myDraw->Draw_String_Black(x - (width + dateStore_Number.sizeX) / 2, y, to_string(id));
+			myDraw->Draw_String_Black(x, y, text);
 		default:
 			break;
 		}
@@ -369,6 +387,19 @@ public:
 	/*自身のinput変数が、自分以前のどのプロセスで更新されているか*/
 	bool SetPosX(vector<Node> nodes) {
 		bool check = false;
+		/*データストアの場合*/
+		if (processType == DATESTORE) {
+			pos.x = id + 1;
+			/*
+			for (int nodeID = id - 1; nodeID >= 0; nodeID--) {
+				if (nodes[nodeID].processType == DATESTORE) {
+					pos.x += 1;
+				}
+			}
+			*/
+			return true;
+		}
+		/*通常nodeの場合*/
 		for (int inIndex = 0; inIndex < (int)input.size(); inIndex++) {
 			bool skip = true;
 			for (int nodeID = id - 1; nodeID >= 0 && skip; nodeID--) {
@@ -384,16 +415,28 @@ public:
 					}
 				}
 			}
+			/*
+			if (skip) {
+				connectNodeID.push_back(0);
+			}
+			*/
 		}
 		return check;
 	}
 	/*自分以前かつ同じ横軸のプロセスに対し、最大の縦軸+1を自身の位置にする*/
 	void SetPosY(vector<Node> nodes) {
+		if (processType == DATESTORE) {
+			pos.y = 1;
+			return;
+		}
 		for (int nodeID = id - 1; nodeID >= 0; nodeID--) {
 			if (pos.x == nodes[nodeID].pos.x) {
 				pos.y = nodes[nodeID].pos.y + 1;
 				break;
 			}
+		}
+		if (pos.y == 1 && nodes[0].processType == DATESTORE) {
+			pos.y = nodes[0].pos.y + 1;
 		}
 	}
 	/*横幅の中で最大の値を返す*/
