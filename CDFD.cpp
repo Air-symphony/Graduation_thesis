@@ -65,6 +65,7 @@ public:
 
 	int node_id = 0;
 	OffsetList scopeOffset;
+	vector<int> scopeOffset_nodeID;
 	OffsetList exprOffset;
 	int preId, preScope, preState;
 	bool inoutputFlag, inputFlag, outputFlag;
@@ -73,7 +74,7 @@ public:
 	bool binaryLock, DeclLock;
 
 	/*そのif文内で実行されるプロセスを回収するため*/
-	vector<int> scopeOffset_nodeId;
+	vector<int> scopeOffset_nodeIDInIfStmt;
 
 	CDFD(int id = 0) {
 		init();
@@ -98,8 +99,11 @@ public:
 			variableRelation.pop_back();
 		}
 		*/
-		for (i = (int)scopeOffset_nodeId.size(); i > 0; i--) {
-			scopeOffset_nodeId.pop_back();
+		for (i = (int)scopeOffset_nodeIDInIfStmt.size(); i > 0; i--) {
+			scopeOffset_nodeIDInIfStmt.pop_back();
+		}
+		for (i = (int)scopeOffset_nodeID.size(); i > 0; i--) {
+			scopeOffset_nodeID.pop_back();
 		}
 		for (i = (int)maxWidthList.size(); i > 0; i--) {
 			maxWidthList.pop_back();
@@ -110,8 +114,14 @@ public:
 
 	/*ifのインデントの深さ*/
 	void CheckScope(Node *node, bool ifstmt = false) {
+		if (ifstmt && scopeOffset.CheckOffset_ElseStmt(node->offset)) {
+			node->connectIfStmt_id = scopeOffset_nodeID[scopeOffset_nodeID.size() - 1];
+		}
 		int scope = scopeOffset.CheckOffset(node->offset, ifstmt);
 		node->addScope(scope);
+		for (int i = scopeOffset_nodeID.size(); i > scopeOffset.size(); i--) {
+			scopeOffset_nodeID.pop_back();
+		}
 	}
 	/*コードに対する詳細の深さ*/
 	void CheckExpression(Node *node) {
@@ -137,6 +147,7 @@ public:
 			elseNode.addScope(node.scope - 1);
 			elseNode.addState(node.state);
 			elseNode.ChangeProcessType(BRANCH_DEFAULT);
+			elseNode.connectIfStmt_id = scopeOffset_nodeID[scopeOffset_nodeID.size() - 1];
 			/*input情報の入力先をずらす*/
 			if (node_id == preId) {
 				preId++;
@@ -152,17 +163,18 @@ public:
 	}
 
 	void AddProcess_IfStmtNode(Node node, bool ifstmt) {
-		int size = (int)scopeOffset_nodeId.size();
+		int size = (int)scopeOffset_nodeIDInIfStmt.size();
 		for (int i = node.scope; i < size; i++) {
-			scopeOffset_nodeId.pop_back();
+			scopeOffset_nodeIDInIfStmt.pop_back();
 		}
 		/*if文内に存在する場合*/
-		if (0 < scopeOffset_nodeId.size()) {
-			int id = scopeOffset_nodeId[scopeOffset_nodeId.size() - 1];
-			nodes[id].AddNode(node_id);
+		if (0 < scopeOffset_nodeIDInIfStmt.size()) {
+			int id = scopeOffset_nodeIDInIfStmt[scopeOffset_nodeIDInIfStmt.size() - 1];
+			//nodes[id].AddDoIfStmt_id(node_id);
+			nodes[node_id].AddDoIfStmt_id(id);
 		}
 		if (ifstmt) {
-			scopeOffset_nodeId.push_back(node_id);
+			scopeOffset_nodeIDInIfStmt.push_back(node_id);
 		}
 	}
 	/*今から作業するコードが、以前のノードに内包されていなければ、全てのフラグを解除*/
@@ -324,9 +336,11 @@ public:
 		maxWidthList.push_back(50);
 		for (int i = 0; i < nodes.size(); i++) {
 			nodes[i].SetNodeSize(&myDraw);
-			nodes[i].SetPosX(nodes);
-			nodes[i].SetPosY(nodes);
+			nodes[i].SetPosX(&nodes);
 			maxWidthList[nodes[i].pos.x] = nodes[i].GetWidth(&maxWidthList);
+		}
+		for (int i = 0; i < nodes.size(); i++) {
+			nodes[i].SetPosY(nodes);
 		}
 	}
 

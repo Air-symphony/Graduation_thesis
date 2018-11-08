@@ -34,6 +34,10 @@ public:
 		}
 	}
 
+	int size() {
+		return list.size();
+	}
+
 	void AddOffset(Offset offset) {
 		list.push_back(offset);
 	}
@@ -61,10 +65,9 @@ public:
 					count++;
 				}
 			}
-			else
-				if (list[i].end < begin) {
-					list.pop_back();
-				}
+			else if (list[i].end < begin) {
+				list.pop_back();
+			}
 		}
 		return count;
 	}

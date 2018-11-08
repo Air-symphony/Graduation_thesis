@@ -233,6 +233,7 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 		kind == CXCursorKind::CXCursor_IfStmt)
 	{
 		cdfd->scopeOffset.AddOffset(nameRange.begin_int_data, nameRange.end_int_data);
+		cdfd->scopeOffset_nodeID.push_back(node.id);
 		/*’ŠÛ‰»‚ðs‚¤‚×‚«\•¶*/
 		if (kind != CXCursorKind::CXCursor_IfStmt) {
 			cdfd->SetConcreteCDFD(map.GetAbstractCDFD_id());

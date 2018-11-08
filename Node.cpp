@@ -21,8 +21,8 @@ public:
 		x = y = 0;
 	}
 	Pos(int _x, int _y) {
-x = _x;
-y = _y;
+		x = _x;
+		y = _y;
 	}
 	void SetPos(int _x, int _y) {
 		x = _x;
@@ -40,8 +40,8 @@ private:
 	vector<string> input;
 	/*inputの変数を受け付ける、送信元のノードIDリスト*/
 	vector<int> connectNodeID;
-	/*分岐構造での実行するノードID*/
-	vector<int> block;
+	/*trueの場合に実行される分岐構造ノードID*/
+	int doIfStmt_id;
 public:
 	ProcessType processType;
 	int id;
@@ -51,6 +51,8 @@ public:
 	string variableName;
 	/*具体化されるCDFDのID*/
 	int concreteCDFD_id;
+	/*if,else文のつながりを持つID*/
+	int connectIfStmt_id;
 	/*CDFD上でのマス目の座標*/
 	Pos pos;
 	/*ノードのサイズ*/
@@ -66,11 +68,8 @@ public:
 		type = _type;
 		text = _text;
 		variableName = _variableName;
-		concreteCDFD_id = -1;
+		concreteCDFD_id = connectIfStmt_id = doIfStmt_id  = -1;
 		processType = ProcessType::NORMAL;
-		for (int i = (int)block.size(); i > 0; i--) {
-			block.pop_back();
-		}
 	}
 
 	/*画像素材の準備*/
@@ -194,8 +193,8 @@ public:
 		return true;
 	}
 
-	bool AddNode(int id) {
-		block.push_back(id);
+	bool AddDoIfStmt_id(int id) {
+		doIfStmt_id = id;
 		return true;
 	}
 	/*ノードの情報の文字データ*/
@@ -209,7 +208,23 @@ public:
 		}
 		str += to_string(id) + " : " + "(" + to_string(offset.begin) + " - " + to_string(offset.end) + ")";
 		//str += variableName + " ";
-		str += ":" + to_string(concreteCDFD_id) + ": ";
+		switch (processType)
+		{
+			case NORMAL:
+				break;
+			case BRANCH_STANDARD:
+			case BRANCH_DEFAULT:
+				str += ":" + to_string(connectIfStmt_id) + ": ";
+				break;
+			case FORLOOP:
+			case WHILELOOP:
+				str += ":" + to_string(concreteCDFD_id) + ": ";
+				break;
+			case DATESTORE:
+				break;
+			default:
+				break;
+		}
 		str += "<" + type + ">";
 		str += "[" + text + "]";
 
@@ -226,13 +241,10 @@ public:
 		}
 		str += "]";
 		str += "(" + to_string(pos.x) + "," + to_string(pos.y) + ")";
-		/*
-		str += " [";
-		for (int inIndex = 0; inIndex < block.size(); inIndex++) {
-			str += to_string(block[inIndex]) + ",";
-		}
+		
+		str += " [" + to_string(doIfStmt_id);
 		str += "]";
-		*/
+		
 		return str + "\n";
 	}
 	/*ノードの大きさを設定*/
@@ -293,6 +305,9 @@ public:
 		switch (processType)
 		{
 		case NORMAL:
+			if (text == "") {
+				break;
+			}
 			processGraph.DrawExtend(x, y, width, height);
 			process_LeftGraph.DrawExtend(x - width / 2, y, process_LeftGraph.sizeX, height, 5);
 			process_RightGraph.DrawExtend(x + width / 2, y, process_RightGraph.sizeX, height, 5);
@@ -370,6 +385,16 @@ public:
 			Arrow::Draw(output_x, output_y, input_x, input_y);
 			myDraw->Draw_String(input_x - inoutPos, input_y - inoutPos, input[inIndex],GetColor(255,255,0), 6);
 		}
+		if (doIfStmt_id > 0) {
+			Node* ifStmtNode = &nodes[doIfStmt_id];
+			int output_x = ifStmtNode->GetPosX(maxWidthList) + ifStmtNode->width / 2 - cursor_x;
+			int output_y = ifStmtNode->GetPosY() - cursor_y;
+
+			int input_x = GetPosX(maxWidthList) - width / 2 - cursor_x;
+			int input_y = GetPosY() - cursor_y;
+
+			Arrow::Draw(output_x, output_y, input_x, input_y);
+		}
 		/*
 		int maxOutPutWidth = 0;
 		for (int i = 0; i < outputSize; i++) {
@@ -385,10 +410,61 @@ public:
 	}
 
 	/*自身のinput変数が、自分以前のどのプロセスで更新されているか*/
-	bool SetPosX(vector<Node> nodes) {
+	bool SetPosX(vector<Node> *nodes) {
 		bool check = false;
-		/*データストアの場合*/
-		if (processType == DATESTORE) {
+		int connectID = id;
+		switch (processType)
+		{
+		case NORMAL:
+		case FORLOOP:
+		case WHILELOOP:
+		case BRANCH_STANDARD:
+		case BRANCH_DEFAULT:
+			/*通常nodeの場合*/
+			if (doIfStmt_id > 0) {
+				pos.x = nodes->at(doIfStmt_id).pos.x + 1;
+
+				connectID = doIfStmt_id;
+				if (nodes->at(connectID).connectIfStmt_id > 0) {
+					connectID = nodes->at(connectID).connectIfStmt_id;
+				}
+			}
+			else if (connectIfStmt_id > 0) {
+				connectID = connectIfStmt_id;
+			}
+			for (int inIndex = 0; inIndex < (int)input.size(); inIndex++) {
+				bool skip = true;
+				for (int nodeID = connectID - 1; nodeID >= 0 && skip; nodeID--) {
+					int size = (int)nodes->at(nodeID).output.size();
+					for (int outIndex = 0; outIndex < size && skip; outIndex++) {
+						if (nodes->at(nodeID).output[outIndex] == input[inIndex]) {
+							if (pos.x < nodes->at(nodeID).pos.x + 1) {
+								pos.x = nodes->at(nodeID).pos.x + 1;
+								check = true;
+							}
+							connectNodeID.push_back(nodeID);
+							skip = false;
+						}
+					}
+				}
+				/*
+				if (skip) {
+					connectNodeID.push_back(0);
+				}
+				*/
+			}
+			//return check;
+			if (connectIfStmt_id > 0) {
+				if (nodes->at(connectIfStmt_id).pos.x < pos.x) {
+					nodes->at(connectIfStmt_id).pos.x = pos.x;
+					Recursion_connectIfStmt_id(nodes, connectIfStmt_id);
+				}
+				else {
+					pos.x = nodes->at(connectIfStmt_id).pos.x;
+				}
+			}
+			return true;
+		case DATESTORE:
 			pos.x = id + 1;
 			/*
 			for (int nodeID = id - 1; nodeID >= 0; nodeID--) {
@@ -398,35 +474,28 @@ public:
 			}
 			*/
 			return true;
+		default:
+			return false;
 		}
-		/*通常nodeの場合*/
-		for (int inIndex = 0; inIndex < (int)input.size(); inIndex++) {
-			bool skip = true;
-			for (int nodeID = id - 1; nodeID >= 0 && skip; nodeID--) {
-				int size = (int)nodes[nodeID].output.size();
-				for (int outIndex = 0; outIndex < size && skip; outIndex++) {
-					if (nodes[nodeID].output[outIndex] == input[inIndex]) {
-						if (pos.x < nodes[nodeID].pos.x + 1) {
-							pos.x = nodes[nodeID].pos.x + 1;
-							check = true;
-						}
-						connectNodeID.push_back(nodeID);
-						skip = false;
-					}
-				}
+	}
+
+	void Recursion_connectIfStmt_id(vector<Node> *nodes, int checkID) {
+		for (int nodeID = checkID + 1; nodeID < id; nodeID++) {
+			if (nodes->at(nodeID).doIfStmt_id > 0) {
+				nodes->at(nodeID).pos.x = nodes->at(nodes->at(nodeID).doIfStmt_id).pos.x + 1;
+				Recursion_connectIfStmt_id(nodes, nodeID);
 			}
-			/*
-			if (skip) {
-				connectNodeID.push_back(0);
-			}
-			*/
 		}
-		return check;
+		return;
 	}
 	/*自分以前かつ同じ横軸のプロセスに対し、最大の縦軸+1を自身の位置にする*/
 	void SetPosY(vector<Node> nodes) {
 		if (processType == DATESTORE) {
 			pos.y = 1;
+			return;
+		}
+		if (connectIfStmt_id > 0) {
+			pos.y = nodes[connectIfStmt_id].pos.y + 1;
 			return;
 		}
 		for (int nodeID = id - 1; nodeID >= 0; nodeID--) {
