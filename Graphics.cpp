@@ -81,12 +81,13 @@ public:
 		else if (number == 9)
 			DrawExtendGraph(x - width, y - height, x, y, graphID, TRUE);
 	}
+	/*rateY = 0.3*/
 	void DrawArrowBase(int input_x, int input_y, double ratex, double angle) {
 		DrawRotaGraph3(input_x, input_y,
-			0, sizeY / 2, ratex, 1.0f,
+			0, sizeY / 2, ratex, 0.3f,
 			angle, graphID, TRUE);
 	}
-
+	/*rateY = 0.3*/
 	void DrawArrowTip(int output_x, int output_y, double ratex, double angle) {
 		DrawRotaGraph2(output_x, output_y, 0, sizeY / 2, 0.3f, angle + PI, graphID, TRUE);
 	}

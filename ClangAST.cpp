@@ -4,7 +4,7 @@
 #include "clang-c\Index.h"
 using namespace std;
 
-Graph Arrow::arrowBase, Arrow::arrowTip;
+Graph Arrow::arrowBase, Arrow::arrowTip, Arrow::arrowBase_dot;
 Graph Node::processGraph, Node::process_LeftGraph, Node::process_RightGraph;
 Graph Node::loopProcess_RightGraph;
 Graph Node::branchProcess_StandardGraph, Node::branchProcess_DefaultGraph;

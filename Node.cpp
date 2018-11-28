@@ -382,7 +382,7 @@ public:
 			int dy = height / (int)(inputSize + 1);
 			int input_x = GetPosX(maxWidthList) - width / 2  - cursor_x;
 			int input_y = GetPosY() - height / 2 + dy * (inIndex + 1) - cursor_y;
-			Arrow::Draw(output_x, output_y, input_x, input_y);
+			Arrow::DrawArrow(output_x, output_y, input_x, input_y);
 			myDraw->Draw_String(input_x - inoutPos, input_y - inoutPos, input[inIndex],GetColor(255,255,0), 6);
 		}
 		if (doIfStmt_id > 0) {
@@ -393,7 +393,7 @@ public:
 			int input_x = GetPosX(maxWidthList) - width / 2 - cursor_x;
 			int input_y = GetPosY() - cursor_y;
 
-			Arrow::Draw(output_x, output_y, input_x, input_y);
+			Arrow::DrawArrow(output_x, output_y, input_x, input_y);
 		}
 		/*
 		int maxOutPutWidth = 0;
