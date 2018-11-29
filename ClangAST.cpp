@@ -6,6 +6,7 @@ using namespace std;
 
 Graph Arrow::arrowBase, Arrow::arrowTip, Arrow::arrowBase_dot;
 Graph Node::processGraph, Node::process_LeftGraph, Node::process_RightGraph;
+Graph Node::process_Left_SeparatorGraph;
 Graph Node::loopProcess_RightGraph;
 Graph Node::branchProcess_StandardGraph, Node::branchProcess_DefaultGraph;
 Graph Node::dateStore_Name, Node::dateStore_Number;

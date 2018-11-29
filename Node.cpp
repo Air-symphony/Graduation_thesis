@@ -32,6 +32,7 @@ public:
 class Node {
 private:
 	static Graph processGraph, process_LeftGraph, process_RightGraph;
+	static Graph process_Left_SeparatorGraph;
 	static Graph loopProcess_RightGraph;
 	static Graph branchProcess_StandardGraph, branchProcess_DefaultGraph;
 	static Graph dateStore_Name, dateStore_Number;
@@ -39,7 +40,7 @@ private:
 	vector<string> output;
 	vector<string> input;
 	/*inputの変数を受け付ける、送信元のノードIDリスト*/
-	vector<int> connectNodeID;
+	vector<vector<int>> connectNodeID;
 	/*trueの場合に実行される分岐構造ノードID*/
 	int doIfStmt_id;
 public:
@@ -57,7 +58,8 @@ public:
 	Pos pos;
 	/*ノードのサイズ*/
 	int width, height;
-	//unsigned level;
+	/*入力のパターン数*/
+	int port;
 
 	Node(int _id, int _begin, int _end, string _type, string _text, string _variableName, unsigned _level = 0) {
 		pos.SetPos(1, 1);
@@ -70,6 +72,7 @@ public:
 		variableName = _variableName;
 		concreteCDFD_id = connectIfStmt_id = doIfStmt_id  = -1;
 		processType = ProcessType::NORMAL;
+		port = 1;
 	}
 
 	/*画像素材の準備*/
@@ -77,6 +80,7 @@ public:
 		Node::processGraph.SetGraph(LoadGraph("picture\\Process.png"));
 		Node::process_LeftGraph.SetGraph(LoadGraph("picture\\Process_Left.png"));
 		Node::process_RightGraph.SetGraph(LoadGraph("picture\\Process_Right.png"));
+		Node::process_Left_SeparatorGraph.SetGraph(LoadGraph("picture\\Process_Left_Separator.png"));
 		Node::loopProcess_RightGraph.SetGraph(LoadGraph("picture\\Process_Right_Loop.png"));
 		Node::branchProcess_StandardGraph.SetGraph(LoadGraph("picture\\BranchProcess_Standard.png"));
 		Node::branchProcess_DefaultGraph.SetGraph(LoadGraph("picture\\BranchProcess_Default.png"));
@@ -229,7 +233,10 @@ public:
 		str += "[" + text + "]";
 
 		for (int i = 0; i < (int)connectNodeID.size(); i++) {
-			str += to_string(connectNodeID[i]) + ",";
+			for (int j = 0; j < connectNodeID[i].size(); j++) {
+				str += to_string(connectNodeID[i][j]) + ",";
+			}
+			str += "|";
 		}
 		str += "[";
 		for (int i = 0; i < (int)output.size(); i++) {
@@ -279,7 +286,8 @@ public:
 		default:
 			break;
 		}
-		int inputSize = (int)input.size(), outputSize = (int)output.size();
+		int outputSize = (int)output.size();
+		int inputSize = port * connectNodeID.size();
 		int limitSize = 3;
 		if (limitSize < inputSize || limitSize < outputSize) {
 			int size = (inputSize < outputSize) ? outputSize : inputSize;
@@ -310,6 +318,11 @@ public:
 			}
 			processGraph.DrawExtend(x, y, width, height);
 			process_LeftGraph.DrawExtend(x - width / 2, y, process_LeftGraph.sizeX, height, 5);
+
+			for (int i = 1; i < port; i++) {
+				int port_y = y - height / 2 + (height / port) * i;
+				process_Left_SeparatorGraph.Draw(x - width / 2, port_y, 5);
+			}
 			process_RightGraph.DrawExtend(x + width / 2, y, process_RightGraph.sizeX, height, 5);
 			myDraw->Draw_String_Black(x, y, text);
 			break;
@@ -351,39 +364,63 @@ public:
 		
 		int inoutPos = 10;
 		int connectSize = (int)connectNodeID.size();
-		for (int inIndex = 0; inIndex < connectSize; inIndex++) {
-			Node* outputNode = &nodes[connectNodeID[inIndex]];
-			vector<string>* connectOutput = &outputNode->output;
-			int size = (int)connectOutput->size();
-			int output_x = 0, output_y = 0;
 
-			if (outputNode->processType == FORLOOP || outputNode->processType == WHILELOOP) {
-				for (int outIndex = 0; outIndex < size; outIndex++) {
-					if (connectOutput->at(outIndex) == input[inIndex]) {
-						int dy = (outputNode->height / 2) / (int)(size + 1);
-						output_x = outputNode->GetPosX(maxWidthList) + outputNode->width / 2 - cursor_x;
-						output_y = outputNode->GetPosY() + dy * (outIndex + 1) - cursor_y;
-						myDraw->Draw_String_White(output_x + inoutPos, output_y - inoutPos, connectOutput->at(outIndex), 4);
-						break;
+		for (int kind = 0; kind < connectSize; kind++) {
+			int rate = 1;
+			for (int i = 0; i < kind; i++) {
+				rate *= connectNodeID[i].size();
+			}
+
+			for (int outputID = 0; outputID < connectNodeID[kind].size(); outputID++) {
+				Node* outputNode = &nodes[connectNodeID[kind][outputID]];
+				vector<string>* connectOutput = &outputNode->output;
+				int size = (int)connectOutput->size();
+				int output_x = 0, output_y = 0;
+
+				if (outputNode->processType == FORLOOP || outputNode->processType == WHILELOOP) {
+					for (int outIndex = 0; outIndex < size; outIndex++) {
+						if (connectOutput->at(outIndex) == input[kind]) {
+							int dy = (outputNode->height / 2) / (int)(size + 1);
+							output_x = outputNode->GetPosX(maxWidthList) + outputNode->width / 2 - cursor_x;
+							output_y = outputNode->GetPosY() + dy * (outIndex + 1) - cursor_y;
+							myDraw->Draw_String_White(output_x + inoutPos, output_y - inoutPos, connectOutput->at(outIndex), 4);
+							break;
+						}
 					}
 				}
-			}
-			else {
-				for (int outIndex = 0; outIndex < size; outIndex++) {
-					if (connectOutput->at(outIndex) == input[inIndex]) {
-						int dy = outputNode->height / (int)(size + 1);
-						output_x = outputNode->GetPosX(maxWidthList) + outputNode->width / 2 - cursor_x;
-						output_y = outputNode->GetPosY() - outputNode->height / 2 + dy * (outIndex + 1) - cursor_y;
-						myDraw->Draw_String_White(output_x + inoutPos, output_y - inoutPos, connectOutput->at(outIndex), 4);
-						break;
+				else {
+					for (int outIndex = 0; outIndex < size; outIndex++) {
+						if (connectOutput->at(outIndex) == input[kind]) {
+							int dy = outputNode->height / (int)(size + 1);
+							output_x = outputNode->GetPosX(maxWidthList) + outputNode->width / 2 - cursor_x;
+							output_y = outputNode->GetPosY() - outputNode->height / 2 + dy * (outIndex + 1) - cursor_y;
+							myDraw->Draw_String_White(output_x + inoutPos, output_y - inoutPos, connectOutput->at(outIndex), 4);
+							break;
+						}
 					}
 				}
+
+				int dy = height / (int)(port * connectSize + 1);
+				int input_x = GetPosX(maxWidthList) - width / 2 - cursor_x;
+				//[0,1,2][3,4] => 03,13,23,04,14,24
+				for (int i = 0; i < port / connectNodeID[kind].size(); i++) {
+					int portID = i;//012345
+					if (1 <= kind) {
+						portID = i / rate;//000111
+					}
+					portID = portID * rate * connectNodeID[kind].size();//000333
+					if (1 <= kind) {
+						portID = portID + i % rate;//012345
+					}
+					portID = portID * connectSize + kind;//024
+					portID = portID + outputID * connectSize;
+					
+					int input_y = GetPosY() - height / 2 + dy * (portID + 1) - cursor_y;
+					Arrow::DrawArrow(output_x, output_y, input_x, input_y);
+					myDraw->Draw_String(input_x - inoutPos, input_y - inoutPos, input[kind], GetColor(255, 255, 0), 6);
+					//myDraw->Draw_String(input_x - inoutPos, input_y - inoutPos + 100, input[kind] + ":" + to_string(input_y + cursor_y), GetColor(255, 255, 0), 6);
+				}
 			}
-			int dy = height / (int)(inputSize + 1);
-			int input_x = GetPosX(maxWidthList) - width / 2  - cursor_x;
-			int input_y = GetPosY() - height / 2 + dy * (inIndex + 1) - cursor_y;
-			Arrow::DrawArrow(output_x, output_y, input_x, input_y);
-			myDraw->Draw_String(input_x - inoutPos, input_y - inoutPos, input[inIndex],GetColor(255,255,0), 6);
 		}
 		if (doIfStmt_id > 0) {
 			Node* ifStmtNode = &nodes[doIfStmt_id];
@@ -393,13 +430,13 @@ public:
 			int input_x = GetPosX(maxWidthList) - width / 2 - cursor_x;
 			int input_y = GetPosY() - cursor_y;
 
-			Arrow::DrawArrow(output_x, output_y, input_x, input_y);
+			Arrow::DrawArrow_dot(output_x, output_y, input_x, input_y);
 		}
 		/*
 		int maxOutPutWidth = 0;
 		for (int i = 0; i < outputSize; i++) {
 			int dy = height / (int)(outputSize + 1);
-			//outputPos.push_back(Pos(x + width / 2 + inoutPos, y - height / 2 + dy * (inIndex + 1)));
+			//outputPos.push_back(Pos(x + width / 2 + inoutPos, y - height / 2 + dy * (kind + 1)));
 			myDraw->Draw_String_White(x + width / 2 + inoutPos, y - height / 2 + dy * (i + 1), output[i], 4);
 
 			int w = myDraw->GetTextWidth(output[i]);
@@ -434,6 +471,7 @@ public:
 			}
 			for (int inIndex = 0; inIndex < (int)input.size(); inIndex++) {
 				bool skip = true;
+				vector<int> inputVariable;
 				for (int nodeID = connectID - 1; nodeID >= 0 && skip; nodeID--) {
 					int size = (int)nodes->at(nodeID).output.size();
 					for (int outIndex = 0; outIndex < size && skip; outIndex++) {
@@ -442,18 +480,24 @@ public:
 								pos.x = nodes->at(nodeID).pos.x + 1;
 								check = true;
 							}
-							connectNodeID.push_back(nodeID);
-							skip = false;
+							inputVariable.push_back(nodeID);
+							if (nodes->at(nodeID).doIfStmt_id > 0) {
+								nodeID = nodes->at(nodeID).doIfStmt_id;
+							}
+							else {
+								skip = false;
+							}
 						}
 					}
 				}
-				/*
-				if (skip) {
-					connectNodeID.push_back(0);
+				if (0 < inputVariable.size()) {
+					connectNodeID.push_back(inputVariable);
 				}
-				*/
 			}
-			//return check;
+			port = 1;
+			for (int i = 0; i < connectNodeID.size(); i++) {
+				port *= connectNodeID[i].size();
+			}
 			if (connectIfStmt_id > 0) {
 				if (nodes->at(connectIfStmt_id).pos.x < pos.x) {
 					nodes->at(connectIfStmt_id).pos.x = pos.x;

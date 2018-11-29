@@ -335,8 +335,8 @@ public:
 		MyDrawString myDraw(15);
 		maxWidthList.push_back(50);
 		for (int i = 0; i < nodes.size(); i++) {
-			nodes[i].SetNodeSize(&myDraw);
 			nodes[i].SetPosX(&nodes);
+			nodes[i].SetNodeSize(&myDraw);
 			maxWidthList[nodes[i].pos.x] = nodes[i].GetWidth(&maxWidthList);
 		}
 		for (int i = 0; i < nodes.size(); i++) {
