@@ -375,6 +375,10 @@ public:
 		case WHILELOOP:
 			processGraph.DrawExtend(x, y, width, height);
 			process_LeftGraph.DrawExtend(x - width / 2, y, process_LeftGraph.sizeX, height, 5);
+			for (int i = 1; i < port; i++) {
+				int port_y = y - height / 2 + (height / port) * i;
+				process_Left_SeparatorGraph.Draw(x - width / 2, port_y, 5);
+			}
 			loopProcess_RightGraph.DrawExtend(x + width / 2, y, loopProcess_RightGraph.sizeX, height, 5);
 			myDraw->Draw_String_Black(x, y, text, 8);
 			break;
@@ -394,7 +398,6 @@ public:
 
 	/**•Ï”‚Ì–îˆó‚ğ•`‰æ
 	*connectNodeIDƒŠƒXƒginput•Ï”‚ğŒ©”ä‚×
-	*
 	*/
 	bool DrawArrow(vector<int>* maxWidthList, int cursor_x, int cursor_y, MyDrawString* myDraw, vector<Node> nodes) {
 		int inputSize = (int)input.size();
