@@ -255,7 +255,7 @@ public:
 		return str + "\n";
 	}
 	/*ÉmÅ[ÉhÇÃëÂÇ´Ç≥Çê›íË*/
-	void SetNodeSize(MyDrawString* myDraw) {
+	void SetNodeSize(vector<Node>* nodes, MyDrawString* myDraw) {
 		switch (processType)
 		{
 		case NORMAL:
@@ -264,10 +264,14 @@ public:
 			break;
 		case BRANCH_STANDARD:
 			width = myDraw->GetTextWidth(text) + (process_LeftGraph.sizeX + process_RightGraph.sizeX);
+			width = Recursion_ResizeWidth(nodes, id);
+			Recursion_ResizeWidth(nodes, id, width);
 			height = branchProcess_StandardGraph.sizeY;
 			break;
 		case BRANCH_DEFAULT:
 			width = myDraw->GetTextWidth(text) + (process_LeftGraph.sizeX + process_RightGraph.sizeX);
+			width = Recursion_ResizeWidth(nodes, id);
+			Recursion_ResizeWidth(nodes, id, width);
 			height = branchProcess_DefaultGraph.sizeY;
 			break;
 		case FORLOOP:
@@ -294,6 +298,27 @@ public:
 			height += myDraw->GetTextHeight() * (size - limitSize);
 		}
 	}
+
+	int Recursion_ResizeWidth(vector<Node> *nodes, int nodeID) {
+		if (nodeID > -1) {
+			int tempWidth = nodes->at(nodeID).Recursion_ResizeWidth(nodes, nodes->at(nodeID).connectIfStmt_id);
+			if (width < tempWidth) {
+				return tempWidth;
+			}
+		}
+		return width;
+	}
+
+	int Recursion_ResizeWidth(vector<Node> *nodes, int nodeID, int maxWidth) {
+		if (nodeID > -1) {
+			int tempWidth = nodes->at(nodeID).Recursion_ResizeWidth(nodes, nodes->at(nodeID).connectIfStmt_id, maxWidth);
+			if (tempWidth < maxWidth) {
+				nodes->at(nodeID).width = maxWidth;
+				return  maxWidth;
+			}
+		}
+		return width;
+	}
 	
 	int GetPosX(vector<int>* maxWidthList) {
 		int x = maxWidthList->at(0);
@@ -304,12 +329,24 @@ public:
 		return x;
 	}
 
-	int GetPosY() {
+	int GetPosY(vector<Node>* node) {
+		if (connectIfStmt_id > -1) {
+			int tempY = height / 2;
+			int id = connectIfStmt_id;
+			for (; id > -1; id = node->at(id).connectIfStmt_id) {
+				if (node->at(id).connectIfStmt_id < 0) {
+					tempY += node->at(id).height / 2;
+					break;
+				}
+				tempY += node->at(id).height;
+			}
+			return node->at(id).pos.y * 100 + tempY;
+		}
 		return pos.y * 100;
 	}
 	/*ÉmÅ[ÉhÇÃê}é¶*/
-	bool DrawNode(vector<int>* maxWidthList, int cursor_x, int cursor_y, MyDrawString* myDraw) {
-		int x = GetPosX(maxWidthList) - cursor_x, y = GetPosY() - cursor_y;
+	bool DrawNode(vector<int>* maxWidthList, int cursor_x, int cursor_y, MyDrawString* myDraw, vector<Node>* nodes) {
+		int x = GetPosX(maxWidthList) - cursor_x, y = GetPosY(nodes) - cursor_y;
 		switch (processType)
 		{
 		case NORMAL:
@@ -382,7 +419,7 @@ public:
 						if (connectOutput->at(outIndex) == input[kind]) {
 							int dy = (outputNode->height / 2) / (int)(size + 1);
 							output_x = outputNode->GetPosX(maxWidthList) + outputNode->width / 2 - cursor_x;
-							output_y = outputNode->GetPosY() + dy * (outIndex + 1) - cursor_y;
+							output_y = outputNode->GetPosY(&nodes) + dy * (outIndex + 1) - cursor_y;
 							myDraw->Draw_String_White(output_x + inoutPos, output_y - inoutPos, connectOutput->at(outIndex), 4);
 							break;
 						}
@@ -393,7 +430,7 @@ public:
 						if (connectOutput->at(outIndex) == input[kind]) {
 							int dy = outputNode->height / (int)(size + 1);
 							output_x = outputNode->GetPosX(maxWidthList) + outputNode->width / 2 - cursor_x;
-							output_y = outputNode->GetPosY() - outputNode->height / 2 + dy * (outIndex + 1) - cursor_y;
+							output_y = outputNode->GetPosY(&nodes) - outputNode->height / 2 + dy * (outIndex + 1) - cursor_y;
 							myDraw->Draw_String_White(output_x + inoutPos, output_y - inoutPos, connectOutput->at(outIndex), 4);
 							break;
 						}
@@ -415,7 +452,7 @@ public:
 					portID = portID * connectSize + kind;//024
 					portID = portID + outputID * connectSize;
 					
-					int input_y = GetPosY() - height / 2 + dy * (portID + 1) - cursor_y;
+					int input_y = GetPosY(&nodes) - height / 2 + dy * (portID + 1) - cursor_y;
 					Arrow::DrawArrow(output_x, output_y, input_x, input_y);
 					myDraw->Draw_String(input_x - inoutPos, input_y - inoutPos, input[kind], GetColor(255, 255, 0), 6);
 					//myDraw->Draw_String(input_x - inoutPos, input_y - inoutPos + 100, input[kind] + ":" + to_string(input_y + cursor_y), GetColor(255, 255, 0), 6);
@@ -425,10 +462,10 @@ public:
 		if (doIfStmt_id > 0) {
 			Node* ifStmtNode = &nodes[doIfStmt_id];
 			int output_x = ifStmtNode->GetPosX(maxWidthList) + ifStmtNode->width / 2 - cursor_x;
-			int output_y = ifStmtNode->GetPosY() - cursor_y;
+			int output_y = ifStmtNode->GetPosY(&nodes) - cursor_y;
 
 			int input_x = GetPosX(maxWidthList) - width / 2 - cursor_x;
-			int input_y = GetPosY() - cursor_y;
+			int input_y = GetPosY(&nodes) - cursor_y;
 
 			Arrow::DrawArrow_dot(output_x, output_y, input_x, input_y);
 		}

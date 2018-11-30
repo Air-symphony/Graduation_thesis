@@ -336,7 +336,7 @@ public:
 		maxWidthList.push_back(50);
 		for (int i = 0; i < nodes.size(); i++) {
 			nodes[i].SetPosX(&nodes);
-			nodes[i].SetNodeSize(&myDraw);
+			nodes[i].SetNodeSize(&nodes, &myDraw);
 			maxWidthList[nodes[i].pos.x] = nodes[i].GetWidth(&maxWidthList);
 		}
 		for (int i = 0; i < nodes.size(); i++) {
@@ -377,7 +377,7 @@ public:
 			int max_x = 0, max_y = 0;
 			for (int i = 0; i < nodes.size();i++) {
 				nodes[i].DrawArrow(&maxWidthList, cursor_x, cursor_y, &myDraw, nodes);
-				nodes[i].DrawNode(&maxWidthList, cursor_x, cursor_y, &myDraw);
+				nodes[i].DrawNode(&maxWidthList, cursor_x, cursor_y, &myDraw, &nodes);
 				max_x += nodes[i].width;
 				max_y += nodes[i].height;
 			}
