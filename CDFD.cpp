@@ -64,6 +64,7 @@ public:
 	static bool debug;
 
 	int node_id = 0;
+	int countDateStoreProcess = 0;
 	OffsetList scopeOffset;
 	vector<int> scopeOffset_nodeID;
 	OffsetList exprOffset;
@@ -72,6 +73,8 @@ public:
 	bool assignmentFlag, compoundAssignFlag, getConditionFlag, ifStmtFlag;
 	int equalCount, operatorCount;
 	bool binaryLock, DeclLock;
+	bool loopStmt;
+	bool forCheckStmt[3] = { false , false, false};
 
 	/*そのif文内で実行されるプロセスを回収するため*/
 	vector<int> scopeOffset_nodeIDInIfStmt;
@@ -84,9 +87,12 @@ public:
 	void init() {
 		node_id = 0;
 		preId = preState = preScope = -1;
-		equalCount = operatorCount = 0;
+		countDateStoreProcess = equalCount = operatorCount = 0;
 		outputFlag = inoutputFlag = inputFlag = assignmentFlag = compoundAssignFlag = getConditionFlag = ifStmtFlag = false;
-		binaryLock = DeclLock = false;
+		binaryLock = DeclLock = loopStmt = false;
+		for (int i = 0; i < 3; i++) {
+			forCheckStmt[i] = false;
+		}
 		int i = 0;
 		for (i = (int)nodes.size(); i > 0; i--) {
 			nodes.pop_back();
@@ -123,6 +129,7 @@ public:
 			scopeOffset_nodeID.pop_back();
 		}
 	}
+
 	/*コードに対する詳細の深さ*/
 	void CheckExpression(Node *node) {
 		int state = exprOffset.CheckOffset(node->offset);
@@ -132,16 +139,23 @@ public:
 	void AddDateStoreNode(CDFD pre) {
 		for (int i = 0; i < pre.nodes.size(); i++) {
 			if (pre.nodes[i].CheckDeclStmt()) {
-				pre.nodes[i].processType = DATESTORE;
+				pre.nodes[i].ChangeProcessType(DATESTORE);
 				pre.nodes[i].id = node_id;
 				nodes.push_back(pre.nodes[i]);
 				node_id++;
 			}
 		}
+		countDateStoreProcess = node_id;
+	}
+	void CopyforCheckStmt(bool* copyforCheckStmt) {
+		for (int i = 0; i < 3; i++) {
+			forCheckStmt[i] = copyforCheckStmt[i];
+		}
+		loopStmt = true;
 	}
 
 	void AddNode(Node node, bool ifstmt) {
-		if (scopeOffset.CheckOffset_ElseStmt(node.offset)) {
+		if (scopeOffset.CheckOffset_ElseStmt(node.offset) && nodes[node_id - 1].processType != BRANCH_STANDARD) {
 			/*elseNodeの作成*/
 			Node elseNode(node_id, node.offset.begin, node.offset.end, "elseStmt", "", "");
 			elseNode.addScope(node.scope - 1);
@@ -163,19 +177,39 @@ public:
 	}
 
 	void AddProcess_IfStmtNode(Node node, bool ifstmt) {
-		int size = (int)scopeOffset_nodeIDInIfStmt.size();
-		for (int i = node.scope; i < size; i++) {
-			scopeOffset_nodeIDInIfStmt.pop_back();
+		
+		for (int i = scopeOffset_nodeIDInIfStmt.size() - 1; i >= 0; i--) {
+			int id = scopeOffset_nodeIDInIfStmt[i];
+			if (nodes[id].offset.end < node.offset.begin) {
+				scopeOffset_nodeIDInIfStmt.pop_back();
+			}
+			
+			if (nodes[id].offset.end == node.offset.end) {
+				if (nodes[id].scope >= node.scope) {
+					if (loopStmt){
+						loopStmt = false;
+					}
+					else {
+						scopeOffset_nodeIDInIfStmt.pop_back();
+					}
+				}
+			}
 		}
-		/*if文内に存在する場合*/
+		
+		/*プロセスがif文内に存在する場合*/
 		if (0 < scopeOffset_nodeIDInIfStmt.size()) {
 			int id = scopeOffset_nodeIDInIfStmt[scopeOffset_nodeIDInIfStmt.size() - 1];
-			//nodes[id].AddDoIfStmt_id(node_id);
 			nodes[node_id].AddDoIfStmt_id(id);
 		}
 		if (ifstmt) {
 			scopeOffset_nodeIDInIfStmt.push_back(node_id);
 		}
+	}
+
+	void PushBackNodes(int index) {
+		Node node = nodes[index];
+		nodes.erase(nodes.begin() + index);
+		nodes.push_back(node);
 	}
 	/*今から作業するコードが、以前のノードに内包されていなければ、全てのフラグを解除*/
 	bool OpenLock(Node node) {
@@ -254,13 +288,13 @@ public:
 		return true;
 	}
 
-	static void CopyVariableInOut(CDFD* copyTo, CDFD original) {
-		for (int i = 0; i < original.nodes.size(); i++) {
-			copyTo->nodes[copyTo->nodes.size() - 1].CopyVariableInOut(original.nodes[i]);
+	static void CopyVariableInOut(CDFD* copyTo, CDFD* original) {
+		for (int i = 0; i < original->nodes.size(); i++) {
+			copyTo->nodes[copyTo->nodes.size() - 1].CopyVariableInOut(original->nodes[i]);
 		}
 	}
 
-	static void CopyConditionText(CDFD* copyTo, CDFD original, bool* forCondition) {
+	static void CopyConditionText(CDFD* copyTo, CDFD* original, bool* forCondition) {
 		Node* copyNodeTo = &copyTo->nodes[copyTo->nodes.size() - 1];
 		int index = 0;
 		switch (copyNodeTo->processType)
@@ -270,25 +304,27 @@ public:
 				
 			}
 			else if (forCondition[1]) {
-				for (index = 0; index < original.nodes.size(); index++) {
-					if (original.nodes[index].processType != DATESTORE)
+				for (index = 0; index < original->nodes.size(); index++) {
+					if (original->nodes[index].processType != DATESTORE)
 						break;
 				}
 				if (forCondition[0]) {
 					index++;
 				}
-				Node::CopyConditionText(&copyTo->nodes[copyTo->nodes.size() - 1], original.nodes[index]);
+				Node::CopyConditionText(&copyTo->nodes[copyTo->nodes.size() - 1], original->nodes[index]);
+				original->nodes[index].ChangeProcessType(BRANCH_STANDARD);
 			}
 			else {
 				Node::CopyConditionText_NoCondition(&copyTo->nodes[copyTo->nodes.size() - 1]);
 			}
 			break;
 		case WHILELOOP:
-			for (index = 0; index < original.nodes.size(); index++) {
-				if (original.nodes[index].processType != DATESTORE)
+			for (index = 0; index < original->nodes.size(); index++) {
+				if (original->nodes[index].processType != DATESTORE)
 					break;
 			}
-			Node::CopyConditionText(&copyTo->nodes[copyTo->nodes.size() - 1], original.nodes[index]);
+			Node::CopyConditionText(&copyTo->nodes[copyTo->nodes.size() - 1], original->nodes[index]);
+			original->nodes[index].ChangeProcessType(BRANCH_STANDARD);
 			break;
 		default:
 			break;
@@ -298,6 +334,10 @@ public:
 	/*具体化されるCDFDのIDをnodeにset*/
 	void SetConcreteCDFD(int id) {
 		nodes[node_id - 1].SetconcreteCDFD_id(id);
+	}
+
+	Offset GetNodeOffset(int id) {
+		return nodes[id].offset;
 	}
 	/*
 	int AddVariableName(int _id, string type, string variable) {

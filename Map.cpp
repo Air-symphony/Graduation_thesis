@@ -56,13 +56,14 @@ public:
 	}
 
 	/*’ŠÛ‰»‚·‚é”ÍˆÍ‚ğ•Û‘¶AŠu—£*/
-	CDFD* AddCDFD(int begin, int end) {
+	CDFD* AddCDFD(int begin, int end, bool* forCheckStmt) {
 		scope = scopeOffset.CheckOffset(begin, end) + 1;
 		scopeOffset.AddOffset(begin, end);
 		int id = (int)map.size();
 		int abstractCDFD_id = abstractCDFD_ids[abstractCDFD_ids.size() - 1];
 		CDFD cdfd(id);
 		cdfd.AddDateStoreNode(map[abstractCDFD_id]);
+		cdfd.CopyforCheckStmt(forCheckStmt);
 		abstractCDFD_ids.push_back(id);
 		map.push_back(cdfd);
 		return &map[id];
@@ -74,9 +75,9 @@ public:
 	}
 
 	/*abstractCDFD_ids‚ÌÅŒã”öID‚©‚çCDFD‚Ìæ“¾*/
-	CDFD* ChangeBeforeCDFD() {
+	CDFD* ChangeBeforeCDFD(int before = 0) {
 		//’ŠÛ‰»‚³‚ê‚½CDFD
-		int id = abstractCDFD_ids[abstractCDFD_ids.size() - 1];
+		int id = abstractCDFD_ids[abstractCDFD_ids.size() - 1 - before];
 		return &map[id];
 	}
 
@@ -84,7 +85,7 @@ public:
 		//’ŠÛ‰»‚³‚ê‚½CDFD
 		int id = abstractCDFD_ids[abstractCDFD_ids.size() - 2];
 		//‹ï‘Ì‰»‚³‚ê‚½CDFD
-		CDFD correntCDFD = map[abstractCDFD_ids[abstractCDFD_ids.size() - 1]];
+		CDFD* correntCDFD = &map[abstractCDFD_ids[abstractCDFD_ids.size() - 1]];
 		CDFD::CopyVariableInOut(&map[id], correntCDFD);
 		CDFD::CopyConditionText(&map[id], correntCDFD, forCondition);
 	}
