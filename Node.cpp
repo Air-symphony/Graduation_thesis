@@ -75,6 +75,22 @@ public:
 		port = 1;
 	}
 
+	void EditNode(int eraseID, int postProcessID) {
+		id -= 1;
+		if (eraseID < connectIfStmt_id) {
+			connectIfStmt_id -= 1;
+		}
+		else if (eraseID == connectIfStmt_id) {
+			connectIfStmt_id = postProcessID;
+		}
+		if (eraseID < doIfStmt_id) {
+			doIfStmt_id -= 1;
+		}
+		else if (eraseID == doIfStmt_id) {
+			doIfStmt_id = postProcessID;
+		}
+	}
+
 	/*‰æ‘œ‘fÞ‚Ì€”õ*/
 	static void SetGraph() {
 		Node::processGraph.SetGraph(LoadGraph("picture\\Process.png"));

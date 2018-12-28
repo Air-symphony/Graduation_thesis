@@ -209,6 +209,11 @@ public:
 	void PushBackNodes(int index) {
 		Node node = nodes[index];
 		nodes.erase(nodes.begin() + index);
+		int size = nodes.size();
+		for (int i = index; i < size; i++) {
+			nodes[i].EditNode(index, size);
+		}
+		node.id = size;
 		nodes.push_back(node);
 	}
 	/*今から作業するコードが、以前のノードに内包されていなければ、全てのフラグを解除*/

@@ -280,6 +280,14 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 			map.SetCondition();
 		}
 		else if (kind == CXCursorKind::CXCursor_ForStmt) {
+			CDFD* forPocessCDFD = map.ChangeBeforeCDFD();
+			int postProcessIndex = forPocessCDFD->countDateStoreProcess;
+			for (int i = 0; i < 2; i++) {
+				if (forPocessCDFD->forCheckStmt[i]) {
+					postProcessIndex++;
+				}
+			}
+			forPocessCDFD->PushBackNodes(postProcessIndex);
 			map.SetCondition(forCheckStmt);
 		}
 	}
