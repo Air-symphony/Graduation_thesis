@@ -516,13 +516,8 @@ public:
 			/*’Êínode‚Ìê‡*/
 			if (doIfStmt_id > 0) {
 				pos.x = nodes->at(doIfStmt_id).pos.x + 1;
-
-				connectID = doIfStmt_id;
-				if (nodes->at(connectID).connectIfStmt_id > 0) {
-					connectID = nodes->at(connectID).connectIfStmt_id;
-				}
 			}
-			else if (connectIfStmt_id > 0) {
+			if (connectIfStmt_id > 0) {
 				connectID = connectIfStmt_id;
 			}
 			for (int inIndex = 0; inIndex < (int)input.size(); inIndex++) {
@@ -537,8 +532,8 @@ public:
 								check = true;
 							}
 							inputVariable.push_back(nodeID);
-							if (nodes->at(nodeID).doIfStmt_id > 0) {
-								nodeID = nodes->at(nodeID).doIfStmt_id;
+							if (nodes->at(nodeID).connectIfStmt_id > 0) {
+								nodeID = nodes->at(nodeID).connectIfStmt_id;
 							}
 							else {
 								skip = false;
@@ -594,7 +589,7 @@ public:
 			pos.y = 1;
 			return;
 		}
-		if (connectIfStmt_id > 0) {
+		if (connectIfStmt_id >= 0) {
 			pos.y = nodes[connectIfStmt_id].pos.y + 1;
 			return;
 		}
@@ -602,6 +597,16 @@ public:
 			if (pos.x == nodes[nodeID].pos.x) {
 				pos.y = nodes[nodeID].pos.y + 1;
 				break;
+			}
+		}
+		if (doIfStmt_id >= 0) {
+			int size = (int)input.size();
+			for (int i = 0; i < (int)connectNodeID.size(); i++) {
+				for (int j = 0; j < connectNodeID[i].size(); j++) {
+					if (nodes[connectNodeID[i][j]].pos.y == nodes[doIfStmt_id].pos.y) {
+						pos.y = nodes[doIfStmt_id].pos.y + 1;
+					}
+				}
 			}
 		}
 		if (pos.y == 1 && nodes[0].processType == DATESTORE) {
