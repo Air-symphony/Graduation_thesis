@@ -154,7 +154,7 @@ public:
 		loopStmt = true;
 	}
 
-	void AddNode(Node node, bool ifstmt) {
+	void CreateElseNode(Node node) {
 		if (scopeOffset.CheckOffset_ElseStmt(node.offset) && nodes[node_id - 1].processType != BRANCH_STANDARD) {
 			/*elseNode�̍쐬*/
 			Node elseNode(node_id, node.offset.begin, node.offset.end, "elseStmt", "", "");
@@ -171,6 +171,9 @@ public:
 			node_id++;
 			node.id++;
 		}
+	}
+
+	void AddNode(Node node, bool ifstmt) {
 		nodes.push_back(node);
 		AddProcess_IfStmtNode(node, ifstmt);
 		node_id++;

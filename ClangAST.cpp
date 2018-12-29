@@ -244,8 +244,12 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 					ifstmt = true;
 				}
 			}
+			cdfd->CreateElseNode(node);
 			cdfd->AddNode(node, ifstmt);
 		}
+	}
+	else {
+		cdfd->CreateElseNode(node);
 	}
 
 	/*ˆê”Ôã‚ÌŠK‘w‚Ì‚İ‚ğ•\¦*/
