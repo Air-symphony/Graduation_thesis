@@ -244,6 +244,14 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 					ifstmt = true;
 				}
 			}
+			//while
+			else if (index == 3 && cdfd->whileLoopStmt) {
+				CDFD* cdfd_c = map.ChangeBeforeCDFD(1);
+				Offset offset_c = cdfd_c->GetNodeOffset(cdfd_c->node_id - 1);
+				node.ChangeProcessType(ProcessType::BRANCH_STANDARD);
+				node.offset = offset_c;
+				ifstmt = true;
+			}
 			cdfd->CreateElseNode(node);
 			cdfd->AddNode(node, ifstmt);
 		}
@@ -265,7 +273,7 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 		/*’ŠÛ‰»‚ðs‚¤‚×‚«\•¶*/
 		if (kind != CXCursorKind::CXCursor_IfStmt) {
 			cdfd->SetConcreteCDFD(map.GetAbstractCDFD_id());
-			cdfd = map.AddCDFD(nameRange.begin_int_data, nameRange.end_int_data, forCheckStmt);
+			cdfd = map.AddCDFD(nameRange.begin_int_data, nameRange.end_int_data, forCheckStmt, kind == CXCursorKind::CXCursor_WhileStmt);
 		}
 	}
 	else {

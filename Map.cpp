@@ -56,14 +56,14 @@ public:
 	}
 
 	/*íäè€âªÇ∑ÇÈîÕàÕÇï€ë∂ÅAäuó£*/
-	CDFD* AddCDFD(int begin, int end, bool* forCheckStmt) {
+	CDFD* AddCDFD(int begin, int end, bool* forCheckStmt, bool isWhileStmt) {
 		scope = scopeOffset.CheckOffset(begin, end) + 1;
 		scopeOffset.AddOffset(begin, end);
 		int id = (int)map.size();
 		int abstractCDFD_id = abstractCDFD_ids[abstractCDFD_ids.size() - 1];
 		CDFD cdfd(id);
 		cdfd.AddDateStoreNode(map[abstractCDFD_id]);
-		cdfd.CopyforCheckStmt(forCheckStmt);
+		cdfd.CheckLoopStmt(forCheckStmt, isWhileStmt);
 		abstractCDFD_ids.push_back(id);
 		map.push_back(cdfd);
 		return &map[id];

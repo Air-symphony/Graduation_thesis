@@ -73,7 +73,7 @@ public:
 	bool assignmentFlag, compoundAssignFlag, getConditionFlag, ifStmtFlag;
 	int equalCount, operatorCount;
 	bool binaryLock, DeclLock;
-	bool loopStmt;
+	bool forLoopStmt, whileLoopStmt;
 	bool forCheckStmt[3] = { false , false, false};
 
 	/*そのif文内で実行されるプロセスを回収するため*/
@@ -89,7 +89,7 @@ public:
 		preId = preState = preScope = -1;
 		countDateStoreProcess = equalCount = operatorCount = 0;
 		outputFlag = inoutputFlag = inputFlag = assignmentFlag = compoundAssignFlag = getConditionFlag = ifStmtFlag = false;
-		binaryLock = DeclLock = loopStmt = false;
+		binaryLock = DeclLock = forLoopStmt = whileLoopStmt = false;
 		for (int i = 0; i < 3; i++) {
 			forCheckStmt[i] = false;
 		}
@@ -147,11 +147,14 @@ public:
 		}
 		countDateStoreProcess = node_id;
 	}
-	void CopyforCheckStmt(bool* copyforCheckStmt) {
+	void CheckLoopStmt(bool* copyforCheckStmt, bool isWhileStmt) {
+		whileLoopStmt = isWhileStmt;
 		for (int i = 0; i < 3; i++) {
 			forCheckStmt[i] = copyforCheckStmt[i];
+			if (forCheckStmt[i]) {
+				forLoopStmt = true;
+			}
 		}
-		loopStmt = true;
 	}
 
 	void CreateElseNode(Node node) {
@@ -189,8 +192,8 @@ public:
 			
 			if (nodes[id].offset.end == node.offset.end) {
 				if (nodes[id].scope >= node.scope) {
-					if (loopStmt){
-						loopStmt = false;
+					if (forLoopStmt || whileLoopStmt) {
+						forLoopStmt = whileLoopStmt = false;
 					}
 					else {
 						scopeOffset_nodeIDInIfStmt.pop_back();
@@ -320,7 +323,6 @@ public:
 					index++;
 				}
 				Node::CopyConditionText(&copyTo->nodes[copyTo->nodes.size() - 1], original->nodes[index]);
-				original->nodes[index].ChangeProcessType(BRANCH_STANDARD);
 			}
 			else {
 				Node::CopyConditionText_NoCondition(&copyTo->nodes[copyTo->nodes.size() - 1]);
@@ -332,7 +334,6 @@ public:
 					break;
 			}
 			Node::CopyConditionText(&copyTo->nodes[copyTo->nodes.size() - 1], original->nodes[index]);
-			original->nodes[index].ChangeProcessType(BRANCH_STANDARD);
 			break;
 		default:
 			break;
