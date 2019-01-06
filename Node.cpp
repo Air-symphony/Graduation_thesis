@@ -138,34 +138,44 @@ public:
 		return type == "VarDecl" || type == "FieldDecl";
 	}
 
-	vector<string> escapeVariable;
-	bool CopyVariableInOut(Node original) {
-		if (original.processType != DATESTORE) {
-			if (original.type == "VarDecl" ||
-				original.type == "FieldDecl" ||
-				original.type == "ParmDecl") {
-				escapeVariable.push_back(original.variableName);
+	bool CopyVariableInOut(vector<Node>* originals) {
+		vector<string> escapeInput;
+		vector<string> escapeOutput;
+		int size = (int)originals->size();
+		for (int i = 0; i < size; i++) {
+			Node original = originals->at(i);
+
+			if (original.processType == DATESTORE) {
+				continue;
 			}
-		}
-		for (int i = 0; i < (int)original.input.size(); i++) {
-			bool check = false;
-			for (int j = 0; j < (int)escapeVariable.size(); j++) {
-				if (escapeVariable[j] == original.input[i]){
-					check = true;
+			else if (original.type == "VarDecl" ||
+					original.type == "FieldDecl" ||
+					original.type == "ParmDecl") {
+				escapeOutput.push_back(original.variableName);
+			}
+			
+			for (int i = 0; i < (int)original.input.size(); i++) {
+				bool check = false;
+				for (int j = 0; j < (int)escapeInput.size(); j++) {
+					if (escapeInput[j] == original.input[i]) {
+						check = true;
+						break;
+					}
 				}
+				if (!check)
+					AddInput(original.input[i]);
 			}
-			if (!check)
-				AddInput(original.input[i]);
-		}
-		for (int i = 0; i < (int)original.output.size(); i++) {
-			bool check = false;
-			for (int j = 0; j < (int)escapeVariable.size(); j++) {
-				if (escapeVariable[j] == original.output[i]) {
-					check = true;
+			for (int i = 0; i < (int)original.output.size(); i++) {
+				bool check = false;
+				for (int j = 0; j < (int)escapeOutput.size(); j++) {
+					if (escapeOutput[j] == original.output[i]) {
+						check = true;
+						break;
+					}
 				}
+				if (!check)
+					AddOutput(original.output[i]);
 			}
-			if (!check)
-				AddOutput(original.output[i]);
 		}
 		return true;
 	}

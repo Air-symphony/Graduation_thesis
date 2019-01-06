@@ -300,9 +300,7 @@ public:
 	}
 
 	static void CopyVariableInOut(CDFD* copyTo, CDFD* original) {
-		for (int i = 0; i < original->nodes.size(); i++) {
-			copyTo->nodes[copyTo->nodes.size() - 1].CopyVariableInOut(original->nodes[i]);
-		}
+		copyTo->nodes[copyTo->nodes.size() - 1].CopyVariableInOut(&original->nodes);
 	}
 
 	static void CopyConditionText(CDFD* copyTo, CDFD* original, bool* forCondition) {
