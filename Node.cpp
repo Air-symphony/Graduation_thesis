@@ -533,13 +533,18 @@ public:
 			for (int inIndex = 0; inIndex < (int)input.size(); inIndex++) {
 				bool skip = true;
 				vector<int> inputVariable;
+				int finishID = 0;
 				//自身以前のプロセスの確認
-				for (int nodeID = connectID - 1; nodeID >= 0 && skip; nodeID--) {
+				for (int nodeID = connectID - 1; nodeID >= finishID && skip; nodeID--) {
 					//自身のプロセスを含む、if文プロセスである場合
 					if (nodeID == doIfStmt_id) {
 						if (0 <= nodes->at(nodeID).connectIfStmt_id) {
 							nodeID = GetConnectIfStmt_id(nodes, nodes->at(nodeID).connectIfStmt_id);
 						}
+					}
+					//else文が存在した場合
+					if (nodes->at(nodeID).processType == BRANCH_DEFAULT) {
+						finishID = GetConnectIfStmt_id(nodes, nodes->at(nodeID).connectIfStmt_id);
 					}
 					int size = (int)nodes->at(nodeID).output.size();
 					//自身以前のプロセスの出力を確認
@@ -557,10 +562,14 @@ public:
 									skip = false;
 									break;
 								}
+								//if文を内包するif文内のプロセスの場合
+								else if (0 <= doIfStmt_id && nodeID < GetConnectIfStmt_id(nodes, doIfStmt_id)){
+									skip = false;
+									break;
+								}
 								//関係ないif文の場合、出力変数のパターンを全て取る
 								else {
-									nodeID = nodes->at(nodeID).doIfStmt_id;
-									break;
+									nodeID = nodes->at(nodeID).doIfStmt_id + 1;
 								}
 							}
 							else {

@@ -154,6 +154,7 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 			if (!cdfd->DeclLock) {
 				cdfd->Save_id_state_scope(node.state, node.scope);
 			}
+			cdfd->inputFlag = false;
 			cdfd->binaryLock = true;
 			int equalCount = 0, operatorCount = 0;
 			char key = '=';
@@ -252,9 +253,13 @@ CXChildVisitResult visitChildrenCallback(CXCursor cursor, CXCursor parent, CXCli
 				node.offset = offset_c;
 				ifstmt = true;
 			}
-			cdfd->CreateElseNode(node);
+			bool hasElse = cdfd->CreateElseNode(node);
+			if (hasElse) {
+				node.id++;
+			}
 			cdfd->AddNode(node, ifstmt);
 		}
+		//cdfd->AddNode(node, ifstmt);
 	}
 	else {
 		cdfd->CreateElseNode(node);
