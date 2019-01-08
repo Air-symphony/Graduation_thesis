@@ -514,7 +514,6 @@ public:
 
 	/*自身のinput変数が、自分以前のどのプロセスで更新されているか*/
 	bool SetPosX(vector<Node> *nodes) {
-		bool check = false;
 		int connectID = id;
 		switch (processType)
 		{
@@ -530,20 +529,39 @@ public:
 			if (connectIfStmt_id > 0) {
 				connectID = connectIfStmt_id;
 			}
+			//自身の入力変数
 			for (int inIndex = 0; inIndex < (int)input.size(); inIndex++) {
 				bool skip = true;
 				vector<int> inputVariable;
+				//自身以前のプロセスの確認
 				for (int nodeID = connectID - 1; nodeID >= 0 && skip; nodeID--) {
+					//自身のプロセスを含む、if文プロセスである場合
+					if (nodeID == doIfStmt_id) {
+						if (0 <= nodes->at(nodeID).connectIfStmt_id) {
+							nodeID = GetConnectIfStmt_id(nodes, nodes->at(nodeID).connectIfStmt_id);
+						}
+					}
 					int size = (int)nodes->at(nodeID).output.size();
+					//自身以前のプロセスの出力を確認
 					for (int outIndex = 0; outIndex < size && skip; outIndex++) {
+						//入出力が一致した場合
 						if (nodes->at(nodeID).output[outIndex] == input[inIndex]) {
 							if (pos.x < nodes->at(nodeID).pos.x + 1) {
 								pos.x = nodes->at(nodeID).pos.x + 1;
-								check = true;
 							}
 							inputVariable.push_back(nodeID);
-							if (nodes->at(nodeID).connectIfStmt_id > 0) {
-								nodeID = nodes->at(nodeID).connectIfStmt_id;
+							//if文内のプロセスが出力変数だった場合
+							if (0 <= nodes->at(nodeID).doIfStmt_id) {
+								//同じif文の条件下で行うプロセスの場合
+								if (nodes->at(nodeID).doIfStmt_id == doIfStmt_id) {
+									skip = false;
+									break;
+								}
+								//関係ないif文の場合、出力変数のパターンを全て取る
+								else {
+									nodeID = nodes->at(nodeID).doIfStmt_id;
+									break;
+								}
 							}
 							else {
 								skip = false;
@@ -584,11 +602,26 @@ public:
 		}
 	}
 
+	int GetConnectIfStmt_id(vector<Node> *nodes, int id) {
+		if (0 <= nodes->at(id).connectIfStmt_id) {
+			return GetConnectIfStmt_id(nodes, nodes->at(id).connectIfStmt_id);
+		}
+		return id;
+	}
+
 	void Recursion_connectIfStmt_id(vector<Node> *nodes, int checkID) {
 		for (int nodeID = checkID + 1; nodeID < id; nodeID++) {
+			for (int i = 0; i < nodes->at(nodeID).connectNodeID.size(); i++) {
+				for (int j = 0; j < nodes->at(nodeID).connectNodeID[i].size(); j++) {
+					if (nodes->at(nodeID).pos.x <= nodes->at(nodes->at(nodeID).connectNodeID[i][j]).pos.x) {
+						nodes->at(nodeID).pos.x = nodes->at(nodes->at(nodeID).connectNodeID[i][j]).pos.x + 1;
+					}
+				}
+			}
 			if (nodes->at(nodeID).doIfStmt_id > 0) {
-				nodes->at(nodeID).pos.x = nodes->at(nodes->at(nodeID).doIfStmt_id).pos.x + 1;
-				Recursion_connectIfStmt_id(nodes, nodeID);
+				if (nodes->at(nodeID).pos.x <= nodes->at(nodes->at(nodeID).doIfStmt_id).pos.x) {
+					nodes->at(nodeID).pos.x = nodes->at(nodes->at(nodeID).doIfStmt_id).pos.x + 1;
+				}
 			}
 		}
 		return;
@@ -614,7 +647,9 @@ public:
 			for (int i = 0; i < (int)connectNodeID.size(); i++) {
 				for (int j = 0; j < connectNodeID[i].size(); j++) {
 					if (nodes[connectNodeID[i][j]].pos.y == nodes[doIfStmt_id].pos.y) {
-						pos.y = nodes[doIfStmt_id].pos.y + 1;
+						if (pos.y <= nodes[doIfStmt_id].pos.y) {
+							pos.y = nodes[doIfStmt_id].pos.y + 1;
+						}
 					}
 				}
 			}
